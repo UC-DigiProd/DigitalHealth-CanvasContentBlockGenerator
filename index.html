@@ -32,8 +32,8 @@
         button.action-btn:hover { background-color: #007d99; }
         button.generate-btn { background-color: #027299; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 1em; font-size: 1em; }
         button.generate-btn:hover { background-color: #005a7a; }
-        button.reset-btn { background-color: #e0e5eb; color: #404e65; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 1em; }
-        button.reset-btn:hover { background-color: #d1d7de; }
+        button.reset-btn { background-color: #e0e5eb; color: #404e65; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 1em; transition: 0.2s; }
+        button.reset-btn:hover { background-color: #cdd4dc; }
         
         /* Mapping Area */
         .mapping-area { border-left: 4px solid #009fc2; padding-left: 1.5em; margin: 1.5em 0; background: #f8fbfd; padding-top: 1em; padding-bottom: 1em; border-radius: 0 8px 8px 0; }
@@ -194,20 +194,31 @@
             btn.classList.add('active');
         }
 
-        // Reset Tool Logic
+        // --- FULLY REPAIRED RESET LOGIC ---
         function resetTool(tool) {
-            document.getElementById(`${tool}`).querySelectorAll('textarea, input').forEach(el => {
-                if (el.type !== 'button' && el.type !== 'submit') el.value = '';
-            });
-            if (document.getElementById(`${tool}-in`)) document.getElementById(`${tool}-in`).value = '';
+            const panel = document.getElementById(`tool-${tool}`);
+            
+            if (panel) {
+                // Clear all input/textarea fields within the current panel
+                panel.querySelectorAll('textarea, input').forEach(el => {
+                    if (el.type !== 'button' && el.type !== 'submit') el.value = '';
+                });
+            }
+            
+            // Hide the mapping step and the code output step
             if (document.getElementById(`${tool}-map`)) document.getElementById(`${tool}-map`).style.display = 'none';
             if (document.getElementById(`${tool}-out`)) document.getElementById(`${tool}-out`).style.display = 'none';
             
-            // Special reset for the scratch tool
+            // Completely empty the dynamic fields container so it starts fresh (no leftover rows)
+            if (document.getElementById(`${tool}-fields`)) document.getElementById(`${tool}-fields`).innerHTML = '';
+            
+            // Handle the unique fields inside the Scratch builder
             if (tool === 'scratch') {
                 document.getElementById('scratch-in').innerHTML = '';
                 document.getElementById('scratch-step2').style.display = 'none';
+                document.getElementById('scratch-type').selectedIndex = 0;
             }
+            
             alert('Tool has been reset.');
         }
 

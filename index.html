@@ -316,7 +316,6 @@
                     temp.innerHTML = cleanText;
                     temp.querySelectorAll('li').forEach(li => {
                         let innerText = li.innerHTML.trim().split('\n');
-                        // Use stripTags just in case there's bolding in the legacy list item title
                         let safeTitle = stripTags(innerText[0] || '');
                         addPair(`${tool}-fields`, true, safeTitle, innerText.slice(1).join('\n') || '');
                     });
@@ -410,7 +409,21 @@
                 const bodies = document.getElementById('scratch-map').querySelectorAll('.mapped-body');
                 let listHtml = '';
                 for(let i=0; i < titles.length; i++){
-                    listHtml += `    <li style="flex: 0 1 260px; border: 1px solid rgba(64, 78, 101, 0.15); border-radius: 8px; padding: 1.5em; background-color: rgba(64, 78, 101, 0.03);">\n        <h3 style="margin: 0 0 0.5em; text-align: center; color: #027299; font-size: 1.15em; line-height: 1.3;">${stripTags(titles[i].value)}</h3>\n        <p style="text-align: center; margin: 0; line-height: 1.5; color: #404e65;">${bodies[i].value.trim()}</p>\n    </li>\n`;
+                    let t = stripTags(titles[i].value);
+                    let b = bodies[i].value.trim();
+                    let innerContent = '';
+                    
+                    if (t && b) {
+                        innerContent = `<h3 style="margin: 0 0 0.5em; text-align: center; color: #027299; font-size: 1.15em; line-height: 1.3;">${t}</h3>\n        <p style="text-align: center; margin: 0; line-height: 1.5; color: #404e65;">${b}</p>`;
+                    } else if (t) {
+                        innerContent = `<h3 style="margin: 0; text-align: center; color: #027299; font-size: 1.15em; line-height: 1.3;">${t}</h3>`;
+                    } else if (b) {
+                        innerContent = `<p style="text-align: center; margin: 0; line-height: 1.5; color: #404e65;">${b}</p>`;
+                    }
+
+                    if (innerContent) {
+                        listHtml += `    <li style="display: flex; flex-direction: column; justify-content: center; align-items: center; flex: 0 1 260px; border: 1px solid rgba(64, 78, 101, 0.15); border-radius: 8px; padding: 1.5em; background-color: rgba(64, 78, 101, 0.03);">\n        ${innerContent}\n    </li>\n`;
+                    }
                 }
                 html = `<ul style="display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin: 1.5em 0; padding: 0; list-style: none;">\n${listHtml}</ul>`;
             }
@@ -482,7 +495,21 @@
             const bodies = document.getElementById('list-map').querySelectorAll('.mapped-body');
             let listHtml = '';
             for(let i=0; i < titles.length; i++){
-                listHtml += `    <li style="flex: 0 1 260px; border: 1px solid rgba(64, 78, 101, 0.15); border-radius: 8px; padding: 1.5em; background-color: rgba(64, 78, 101, 0.03);">\n        <h3 style="margin: 0 0 0.5em; text-align: center; color: #027299; font-size: 1.15em; line-height: 1.3;">${stripTags(titles[i].value)}</h3>\n        <p style="text-align: center; margin: 0; line-height: 1.5; color: #404e65;">${bodies[i].value.trim()}</p>\n    </li>\n`;
+                let t = stripTags(titles[i].value);
+                let b = bodies[i].value.trim();
+                let innerContent = '';
+                
+                if (t && b) {
+                    innerContent = `<h3 style="margin: 0 0 0.5em; text-align: center; color: #027299; font-size: 1.15em; line-height: 1.3;">${t}</h3>\n        <p style="text-align: center; margin: 0; line-height: 1.5; color: #404e65;">${b}</p>`;
+                } else if (t) {
+                    innerContent = `<h3 style="margin: 0; text-align: center; color: #027299; font-size: 1.15em; line-height: 1.3;">${t}</h3>`;
+                } else if (b) {
+                    innerContent = `<p style="text-align: center; margin: 0; line-height: 1.5; color: #404e65;">${b}</p>`;
+                }
+
+                if (innerContent) {
+                    listHtml += `    <li style="display: flex; flex-direction: column; justify-content: center; align-items: center; flex: 0 1 260px; border: 1px solid rgba(64, 78, 101, 0.15); border-radius: 8px; padding: 1.5em; background-color: rgba(64, 78, 101, 0.03);">\n        ${innerContent}\n    </li>\n`;
+                }
             }
             const html = `<ul style="display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin: 1.5em 0; padding: 0; list-style: none;">\n${listHtml}</ul>`;
             showOutput('list', html);

@@ -186,43 +186,46 @@
             return (temp.textContent || temp.innerText || '').trim();
         }
 
-        // Shared DOM Cleaner (Preserves links and lists safely for body text)
+        // Shared DOM Cleaner (Preserves links, bold/italic, lists)
         function extractCleanHTML(rawHtml) {
             let temp = document.createElement('div');
             temp.innerHTML = rawHtml;
-            let result = '';
 
             function walk(node) {
+                let result = '';
                 for (let child of node.childNodes) {
                     if (child.nodeType === Node.TEXT_NODE) {
                         let text = child.textContent.replace(/\u00A0/g, ' ').replace(/\s+/g, ' ');
                         result += text.replace(/Links to an external site\.?/gi, '');
                     } else if (child.nodeType === Node.ELEMENT_NODE) {
                         const tag = child.tagName;
+                        
                         if (child.textContent.includes('Links to an external site')) {
                             child.innerHTML = child.innerHTML.replace(/Links to an external site\.?/gi, '');
                         }
+                        
                         if (tag === 'A') {
                             let href = child.getAttribute('href') || '#';
-                            result += `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color: #027299; text-decoration: underline; text-underline-offset: 3px;">${child.textContent.trim()}</a>`;
+                            result += `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color: #027299; text-decoration: underline; text-underline-offset: 3px;">${walk(child).trim()}</a>`;
                         } else if (tag === 'STRONG' || tag === 'B') {
-                            result += `<strong>${child.textContent.trim()}</strong>`;
+                            result += `<strong>${walk(child).trim()}</strong>`;
                         } else if (tag === 'EM' || tag === 'I') {
-                            result += `<em>${child.textContent.trim()}</em>`;
+                            result += `<em>${walk(child).trim()}</em>`;
+                        } else if (tag === 'BR') {
+                            result += '\n';
                         } else if (tag === 'UL' || tag === 'OL') {
                             let listContent = '';
                             for (let li of child.children) {
-                                if (li.tagName === 'LI') listContent += `<li>${li.innerHTML.trim()}</li>`;
+                                if (li.tagName === 'LI') listContent += `<li>${walk(li).trim()}</li>`;
                             }
                             if (listContent) result += `\n\n<${tag.toLowerCase()}>${listContent}</${tag.toLowerCase()}>\n\n`;
                         } else if (tag === 'LI') {
                             // Handled by parent
-                        } else if (['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes(tag)) {
-                            let inner = child.innerHTML;
-                            let cleanInner = extractCleanHTML({childNodes: child.childNodes}).trim();
+                        } else if (['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE'].includes(tag)) {
+                            let cleanInner = walk(child).trim();
                             if (cleanInner) result += `\n\n${cleanInner}\n\n`;
-                        } else {
-                            walk(child);
+                        } else if (!['SCRIPT', 'STYLE', 'IMG', 'IFRAME', 'OBJECT'].includes(tag)) {
+                            result += walk(child);
                         }
                     }
                 }
@@ -312,12 +315,15 @@
                     let temp = document.createElement('div');
                     temp.innerHTML = cleanText;
                     temp.querySelectorAll('li').forEach(li => {
-                        let innerText = li.textContent.trim().split('\n');
-                        addPair(`${tool}-fields`, true, innerText[0] || '', innerText.slice(1).join('\n') || '');
+                        let innerText = li.innerHTML.trim().split('\n');
+                        // Use stripTags just in case there's bolding in the legacy list item title
+                        let safeTitle = stripTags(innerText[0] || '');
+                        addPair(`${tool}-fields`, true, safeTitle, innerText.slice(1).join('\n') || '');
                     });
                 } else {
                     for (let i = 0; i < chunks.length; i += 2) {
-                        addPair(`${tool}-fields`, tool === 'list', chunks[i] || '', chunks[i+1] || '');
+                        let safeTitle = stripTags(chunks[i] || '');
+                        addPair(`${tool}-fields`, tool === 'list', safeTitle, chunks[i+1] || '');
                     }
                 }
             }
@@ -331,7 +337,7 @@
             rawDOM.innerHTML = document.getElementById('scratch-in').innerHTML;
             if (!rawDOM.textContent.trim()) return alert("Please paste text first.");
             
-            const cleanStr = extractCleanHTML(rawDOM).replace(/\n{3,}/g, '\n\n').trim();
+            const cleanStr = extractCleanHTML(rawDOM.innerHTML).replace(/\n{3,}/g, '\n\n').trim();
             document.getElementById('scratch-cleaned').value = cleanStr;
             document.getElementById('scratch-step2').style.display = 'block';
             document.getElementById('scratch-map').style.display = 'none';
@@ -363,19 +369,22 @@
                 let lis = temp.querySelectorAll('li');
                 if (lis.length > 0) {
                     lis.forEach(li => {
-                        let t = li.textContent.trim().split('\n');
-                        addPair('scratch-fields', true, t[0] || '', t.slice(1).join('\n') || '');
+                        let t = li.innerHTML.trim().split('\n');
+                        let safeTitle = stripTags(t[0] || '');
+                        addPair('scratch-fields', true, safeTitle, t.slice(1).join('\n') || '');
                     });
                 } else {
                     for (let i = 0; i < chunks.length; i += 2) {
-                        addPair('scratch-fields', true, chunks[i] || '', chunks[i+1] || '');
+                        let safeTitle = stripTags(chunks[i] || '');
+                        addPair('scratch-fields', true, safeTitle, chunks[i+1] || '');
                     }
                 }
                 btnContainer.innerHTML = `<button class="btn-add" onclick="addPair('scratch-fields', true)">+ Add Another List Item</button>`;
             }
             else {
                 for (let i = 0; i < chunks.length; i += 2) {
-                    addPair('scratch-fields', false, chunks[i] || '', chunks[i+1] || '');
+                    let safeTitle = stripTags(chunks[i] || '');
+                    addPair('scratch-fields', false, safeTitle, chunks[i+1] || '');
                 }
                 btnContainer.innerHTML = `<button class="btn-add" onclick="addPair('scratch-fields', false)">+ Add Another Card/Panel</button>`;
             }
@@ -415,7 +424,7 @@
                 }
                 html = `<div style="display: flex; flex-direction: column; gap: 12px; margin: 1.5em 0;">\n${accHtml}</div>`;
             }
-            else if (type === 'grid') { // Current type will evaluate to scratch-type
+            else if (type === 'grid') { 
                 const titles = document.getElementById('scratch-map').querySelectorAll('.mapped-title');
                 const bodies = document.getElementById('scratch-map').querySelectorAll('.mapped-body');
                 let gridHtml = '';

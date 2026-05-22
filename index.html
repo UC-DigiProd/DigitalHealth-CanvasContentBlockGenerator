@@ -14,11 +14,15 @@
         textarea { resize: vertical; min-height: 120px; font-family: monospace; font-size: 0.9em; background: #fafafa; }
         .rich-input { min-height: 150px; overflow-y: auto; background: #ffffff; }
         .rich-input:empty:before { content: attr(data-placeholder); color: #888; }
-        button { background-color: #027299; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 1em; font-weight: bold; transition: background 0.2s; }
+        button { background-color: #027299; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 0.95em; font-weight: bold; transition: background 0.2s; }
         button:hover { background-color: #005a7a; }
         .btn-secondary { background-color: #009fc2; }
         .btn-secondary:hover { background-color: #007d99; }
+        .btn-small { background-color: #e0e5eb; color: #404e65; padding: 6px 12px; font-size: 0.85em; float: right; margin-top: -30px; }
+        .btn-small:hover { background-color: #cdd4dc; }
+        .btn-add { background-color: #404e65; width: 100%; margin-bottom: 1em; border: 1px dashed rgba(255,255,255,0.5); }
         .error { background-color: #ffebee; color: #c62828; padding: 1em; border-left: 4px solid #c62828; border-radius: 4px; margin-bottom: 1em; display: none; }
+        .item-group { border-left: 3px solid #009fc2; padding-left: 1em; margin-bottom: 1em; background: #fbfcfd; padding-top: 0.5em; padding-bottom: 0.5em; position: relative; }
         #outputArea { display: none; }
         #outputCode { background: #2d2d2d; color: #f8f8f2; min-height: 250px; }
     </style>
@@ -32,18 +36,15 @@
 
     <div class="step-container">
         <h3 class="step-header">Step 1: Paste & Clean</h3>
-        <p style="font-size: 0.9em;">Paste your content from Word/Canvas below. It will look messy, but the cleaner will strip hidden junk while preserving your hyperlinks.</p>
-        
+        <p style="font-size: 0.9em;">Paste your content below. The cleaner will strip hidden Canvas junk while preserving your hyperlinks.</p>
         <label>Raw Rich Text Input:</label>
         <div id="rawInput" class="rich-input" contenteditable="true" data-placeholder="Paste your text with links here..."></div>
-        
         <button id="cleanBtn">Clean Formatting</button>
     </div>
 
     <div class="step-container" id="step2" style="display: none;">
-        <h3 class="step-header">Step 2: Verify Chunking</h3>
-        <p style="font-size: 0.9em;">Review the cleaned text below. Ensure each distinct part of your content (titles, body paragraphs, list items) is separated by a <strong>blank line</strong> (hit Enter twice).</p>
-        
+        <h3 class="step-header">Step 2: Review Cleaned Text</h3>
+        <p style="font-size: 0.9em;">Review the cleaned text below. Hidden "Links to an external site" text has been removed.</p>
         <label>Cleaned Text (Links Retained as HTML):</label>
         <textarea id="cleanedInput"></textarea>
 
@@ -55,16 +56,14 @@
             <option value="grid">CSS Grid Cards (Activities & Options)</option>
             <option value="list">Flexbox List Cards (Vocabulary & Related Items)</option>
         </select>
-
-        <button id="analyzeBtn" class="btn-secondary">Map Content</button>
+        <button id="analyzeBtn" class="btn-secondary">Map Content to Block</button>
     </div>
 
-    <div class="step-container" id="clarificationArea" style="display: none; border-color: #009fc2;">
+    <div class="step-container" id="clarificationArea" style="display: none; border-color: #009fc2; border-width: 2px;">
         <h3 class="step-header" style="color: #027299;">Step 3: Clarify & Generate</h3>
-        <p style="font-size: 0.9em; margin-bottom: 1.5em;">Review how the text has been mapped to the Canvas component. Adjust if necessary.</p>
+        <p style="font-size: 0.9em; margin-bottom: 1.5em;">If the tool guessed the layout wrong because of uneven paragraphs, you can fix it here. Add or remove items as needed before generating.</p>
         
         <div id="dynamicFields"></div>
-        
         <button id="generateBtn">Generate HTML</button>
     </div>
 
@@ -77,20 +76,19 @@
     <script>
         const rawInputEl = document.getElementById('rawInput');
         const cleanBtn = document.getElementById('cleanBtn');
-        
         const step2 = document.getElementById('step2');
         const cleanedInputEl = document.getElementById('cleanedInput');
         const blockTypeEl = document.getElementById('blockType');
         const analyzeBtn = document.getElementById('analyzeBtn');
-        
         const clarificationArea = document.getElementById('clarificationArea');
         const dynamicFields = document.getElementById('dynamicFields');
         const generateBtn = document.getElementById('generateBtn');
-        
         const outputArea = document.getElementById('outputArea');
         const outputCode = document.getElementById('outputCode');
         const errorBox = document.getElementById('errorBox');
         const copyBtn = document.getElementById('copyBtn');
+
+        let currentType = '';
 
         function showError(msg) {
             errorBox.textContent = msg;
@@ -102,29 +100,32 @@
             errorBox.style.display = 'none';
         }
 
-        // Custom DOM Walker: Extracts text, replaces block tags with double line breaks, formats links.
+        // Custom DOM Walker: Extracts text, explicitly strips Canvas 'external site' junk text
         function extractCleanText(node) {
             let result = '';
             for (let child of node.childNodes) {
                 if (child.nodeType === Node.TEXT_NODE) {
-                    // Replace non-breaking spaces and excessive whitespace
-                    result += child.textContent.replace(/\u00A0/g, ' ').replace(/\s+/g, ' ');
+                    let text = child.textContent.replace(/\u00A0/g, ' ').replace(/\s+/g, ' ');
+                    text = text.replace(/Links to an external site\.?/gi, ''); // Destroy Canvas ghost text
+                    result += text;
                 } else if (child.nodeType === Node.ELEMENT_NODE) {
                     const tag = child.tagName;
                     if (tag === 'A') {
                         let href = child.getAttribute('href') || '#';
-                        let linkText = child.textContent.trim();
+                        let linkText = child.textContent.trim().replace(/Links to an external site\.?/gi, ''); // Destroy Canvas ghost text in links
                         if (linkText) {
-                            // Apply Canvas styling directly to extracted links
                             result += `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color: #027299; text-decoration: underline; text-underline-offset: 3px;">${linkText}</a>`;
                         }
                     } else if (tag === 'BR') {
                         result += '\n';
-                    } else if (['P', 'DIV', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes(tag)) {
+                    } else if (['P', 'DIV', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'SPAN'].includes(tag)) {
+                        // For Screenreader spans, skip if it matches canvas junk
+                        if (child.textContent.includes('Links to an external site')) {
+                           child.innerHTML = child.innerHTML.replace(/Links to an external site\.?/gi, '');
+                        }
                         let innerText = extractCleanText(child).trim();
                         if (innerText) result += innerText + '\n\n';
                     } else {
-                        // Recursively process spans, b, i, strong, etc.
                         result += extractCleanText(child);
                     }
                 }
@@ -137,13 +138,10 @@
             hideError();
             if (!rawInputEl.textContent.trim()) return showError("Please paste some text first.");
             
-            // Run the extractor on the hidden rich DOM
             let rawDOM = document.createElement('div');
             rawDOM.innerHTML = rawInputEl.innerHTML;
             let cleanStr = extractCleanText(rawDOM);
-
-            // Clean up excessive line breaks
-            cleanStr = cleanStr.replace(/\n{3,}/g, '\n\n').trim();
+            cleanStr = cleanStr.replace(/\n{3,}/g, '\n\n').trim(); // Fix spacing
             
             cleanedInputEl.value = cleanStr;
             step2.style.display = 'block';
@@ -151,52 +149,60 @@
             outputArea.style.display = 'none';
         });
 
+        // Add Dynamic Item Builders
+        window.removeField = function(btn) {
+            btn.parentElement.remove();
+        }
+
+        window.addListField = function(val = '') {
+            const div = document.createElement('div');
+            div.className = 'item-group';
+            div.innerHTML = `<button class="btn-small" onclick="removeField(this)">Remove</button>
+                <label>List Item:</label><input type="text" class="mapped-item" value="${val.replace(/"/g, '&quot;')}">`;
+            document.getElementById('fieldsContainer').appendChild(div);
+        }
+
+        window.addCardField = function(title = '', body = '') {
+            const div = document.createElement('div');
+            div.className = 'item-group';
+            div.innerHTML = `<button class="btn-small" onclick="removeField(this)">Remove</button>
+                <label>Header/Title:</label><input type="text" class="mapped-title" value="${title.replace(/"/g, '&quot;')}">
+                <label>Body Content:</label><textarea class="mapped-body" rows="3">${body}</textarea>`;
+            document.getElementById('fieldsContainer').appendChild(div);
+        }
+
         // ACTION 2: Analyze & Map
         analyzeBtn.addEventListener('click', () => {
             hideError();
             outputArea.style.display = 'none';
             
-            const type = blockTypeEl.value;
+            currentType = blockTypeEl.value;
             const text = cleanedInputEl.value.trim();
 
             if (!text) return showError("Cleaned text box is empty.");
 
             const chunks = text.split(/\n\n+/).map(t => t.trim()).filter(t => t);
 
-            // Validations
-            if (type === 'quote') {
-                if (!text.includes('"') && !text.includes("'") && !text.includes('“') && !text.includes('”')) {
-                    return showError("Accessibility Error: Blockquotes must only be used for actual quotes. Your text does not contain quotation marks.");
-                }
-            }
-            if (type === 'list' && chunks.length < 2) {
-                return showError("Semantic Error: Flexbox List Cards must be used for lists. Please ensure you have at least two distinct items separated by blank lines in Step 2.");
-            }
+            dynamicFields.innerHTML = '<div id="fieldsContainer"></div>'; 
+            const container = document.getElementById('fieldsContainer');
 
-            dynamicFields.innerHTML = ''; 
-
-            if (type === 'callout') {
-                dynamicFields.innerHTML += `<label>Callout Title:</label><input type="text" class="mapped-title" value="${chunks[0] ? chunks[0].replace(/"/g, '&quot;') : ''}">`;
-                const bodyText = chunks.slice(1).join('\n\n');
-                dynamicFields.innerHTML += `<label>Callout Body Paragraph(s):</label><textarea class="mapped-body">${bodyText || chunks[0] || ''}</textarea>`;
+            if (currentType === 'callout') {
+                container.innerHTML += `<div class="item-group"><label>Callout Title:</label><input type="text" class="mapped-title" value="${chunks[0] ? chunks[0].replace(/"/g, '&quot;') : ''}">
+                <label>Callout Body Paragraph(s):</label><textarea class="mapped-body" rows="4">${chunks.slice(1).join('\n\n') || chunks[0] || ''}</textarea></div>`;
             } 
-            else if (type === 'quote') {
-                dynamicFields.innerHTML += `<label>Exact Quote Text:</label><textarea class="mapped-body">${text}</textarea>`;
+            else if (currentType === 'quote') {
+                container.innerHTML += `<div class="item-group"><label>Exact Quote Text:</label><textarea class="mapped-body" rows="4">${text}</textarea></div>`;
             }
-            else if (type === 'list') {
-                chunks.forEach((chunk, index) => {
-                    dynamicFields.innerHTML += `<label>List Item ${index + 1}:</label><input type="text" class="mapped-item" value="${chunk.replace(/"/g, '&quot;')}">`;
-                });
+            else if (currentType === 'list') {
+                chunks.forEach(chunk => window.addListField(chunk));
+                dynamicFields.innerHTML += `<button class="btn-add" onclick="addListField()">+ Add Another List Item</button>`;
             }
-            else if (type === 'accordion' || type === 'grid') {
+            else if (currentType === 'accordion' || currentType === 'grid') {
+                // Attempt to auto-pair, but leave it editable
                 for (let i = 0; i < chunks.length; i += 2) {
-                    const num = Math.floor(i/2) + 1;
-                    const safeTitle = chunks[i] ? chunks[i].replace(/"/g, '&quot;') : '';
-                    dynamicFields.innerHTML += `<div style="border-left: 3px solid #009fc2; padding-left: 1em; margin-bottom: 1em; background: #fbfcfd; padding-top: 0.5em; padding-bottom: 0.5em;">
-                        <label>Item ${num} Header/Title:</label><input type="text" class="mapped-title" value="${safeTitle}">
-                        <label>Item ${num} Body Content:</label><textarea class="mapped-body">${chunks[i+1] || ''}</textarea>
-                    </div>`;
+                    window.addCardField(chunks[i] || '', chunks[i+1] || '');
                 }
+                dynamicFields.innerHTML += `<button class="btn-add" onclick="addCardField()">+ Add Another Card/Panel</button>`;
             }
 
             clarificationArea.style.display = 'block';
@@ -204,25 +210,24 @@
 
         // ACTION 3: Generate HTML
         generateBtn.addEventListener('click', () => {
-            const type = blockTypeEl.value;
             let html = '';
 
-            if (type === 'callout') {
+            if (currentType === 'callout') {
                 const title = document.querySelector('.mapped-title').value;
                 const bodyLines = document.querySelector('.mapped-body').value.split('\n\n').filter(p => p);
                 let bodyHtml = bodyLines.map(p => `<p style="margin: 0 0 1em 0; line-height: 1.6;">${p}</p>`).join('\n    ');
                 html = `<div style="background-color: rgba(0, 159, 194, 0.08); border: 1px solid rgba(0, 159, 194, 0.2); border-radius: 8px; padding: 1.5em; margin: 1.5em 0;">\n    <h3 style="margin-top: 0; margin-bottom: 0.5em; color: #027299; font-size: 1.25em;">${title}</h3>\n    ${bodyHtml}\n</div>`;
             } 
-            else if (type === 'quote') {
+            else if (currentType === 'quote') {
                 const body = document.querySelector('.mapped-body').value;
                 html = `<blockquote style="margin: 1.5em 0; padding: 1.2em 1.5em; border-left: 4px solid #009fc2; background-color: rgba(64, 78, 101, 0.03); border-radius: 0 8px 8px 0;">\n    <p style="margin: 0; font-style: italic; font-size: 1.1em; line-height: 1.6;">${body}</p>\n</blockquote>`;
             }
-            else if (type === 'list') {
+            else if (currentType === 'list') {
                 const items = Array.from(document.querySelectorAll('.mapped-item')).map(inp => inp.value);
                 let listHtml = items.map(item => `    <li style="flex: 0 1 260px; border: 1px solid rgba(64, 78, 101, 0.15); border-radius: 8px; padding: 1.5em; background-color: rgba(64, 78, 101, 0.03);">\n        <p style="text-align: center; margin: 0; line-height: 1.5;">${item}</p>\n    </li>`).join('\n');
                 html = `<ul style="display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin: 1.5em 0; padding: 0; list-style: none;">\n${listHtml}\n</ul>`;
             }
-            else if (type === 'accordion') {
+            else if (currentType === 'accordion') {
                 const titles = document.querySelectorAll('.mapped-title');
                 const bodies = document.querySelectorAll('.mapped-body');
                 let accHtml = '';
@@ -231,7 +236,7 @@
                 }
                 html = `<div style="display: flex; flex-direction: column; gap: 12px; margin: 1.5em 0;">\n${accHtml}</div>`;
             }
-            else if (type === 'grid') {
+            else if (currentType === 'grid') {
                 const titles = document.querySelectorAll('.mapped-title');
                 const bodies = document.querySelectorAll('.mapped-body');
                 let gridHtml = '';
@@ -242,7 +247,6 @@
             }
 
             outputCode.value = html;
-            clarificationArea.style.display = 'none';
             outputArea.style.display = 'block';
         });
 

@@ -3,267 +3,228 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Canvas Content Block Generator</title>
+    <title>Digital Health Content Block Converters</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f5f7f9; color: #404e65; line-height: 1.6; padding: 2em; max-width: 800px; margin: 0 auto; }
-        h1, h2 { color: #027299; margin-bottom: 0.2em; }
-        .step-container { background: #ffffff; border: 1px solid rgba(64, 78, 101, 0.15); border-radius: 8px; padding: 1.5em; margin-bottom: 1.5em; box-shadow: 0 4px 12px rgba(64, 78, 101, 0.04); }
-        .step-header { font-size: 1.1em; font-weight: bold; color: #009fc2; margin-top: 0; margin-bottom: 1em; border-bottom: 2px solid rgba(0, 159, 194, 0.1); padding-bottom: 0.5em; }
-        label { font-weight: bold; display: block; margin-top: 1em; margin-bottom: 0.5em; font-size: 0.9em; text-transform: uppercase; letter-spacing: 0.5px; color: #666; }
-        select, textarea, input, .rich-input { width: 100%; padding: 12px; border: 1px solid rgba(64, 78, 101, 0.2); border-radius: 6px; box-sizing: border-box; font-family: inherit; margin-bottom: 1em; }
-        textarea { resize: vertical; min-height: 120px; font-family: monospace; font-size: 0.9em; background: #fafafa; }
-        .rich-input { min-height: 150px; overflow-y: auto; background: #ffffff; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f5f7f9; color: #404e65; line-height: 1.6; padding: 2em; max-width: 900px; margin: 0 auto; }
+        h1, h2, h3 { color: #027299; margin-bottom: 0.5em; }
+        p { margin-top: 0; }
+        
+        /* Tab Navigation */
+        .tab-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.5em; border-bottom: 2px solid rgba(0, 159, 194, 0.2); padding-bottom: 1em; }
+        .tab-btn { background: #ffffff; border: 1px solid rgba(64, 78, 101, 0.2); color: #404e65; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9em; transition: 0.2s; }
+        .tab-btn:hover { background: #f0f4f8; }
+        .tab-btn.active { background: #027299; color: #ffffff; border-color: #027299; }
+        .tab-btn.special { border-color: #009fc2; color: #009fc2; }
+        .tab-btn.special:hover { background: #e6f7fa; }
+        .tab-btn.special.active { background: #009fc2; color: #ffffff; }
+        
+        /* Tool Containers */
+        .tool-panel { display: none; background: #ffffff; border: 1px solid rgba(64, 78, 101, 0.15); border-radius: 8px; padding: 2em; box-shadow: 0 4px 12px rgba(64, 78, 101, 0.04); }
+        .tool-panel.active { display: block; }
+        
+        label { font-weight: bold; display: block; margin-top: 1em; margin-bottom: 0.5em; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.5px; color: #666; }
+        textarea, input, select, .rich-input { width: 100%; padding: 12px; border: 1px solid rgba(64, 78, 101, 0.2); border-radius: 6px; box-sizing: border-box; font-family: inherit; margin-bottom: 1em; background: #fafafa; }
+        textarea { resize: vertical; min-height: 100px; font-family: monospace; font-size: 0.9em; }
+        .rich-input { min-height: 120px; overflow-y: auto; background: #ffffff; font-family: inherit; }
         .rich-input:empty:before { content: attr(data-placeholder); color: #888; }
-        button { background-color: #027299; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 0.95em; font-weight: bold; transition: background 0.2s; }
-        button:hover { background-color: #005a7a; }
-        .btn-secondary { background-color: #009fc2; }
-        .btn-secondary:hover { background-color: #007d99; }
-        .btn-small { background-color: #e0e5eb; color: #404e65; padding: 6px 12px; font-size: 0.85em; float: right; margin-top: -30px; }
+        
+        button.action-btn { background-color: #009fc2; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom: 1em; }
+        button.action-btn:hover { background-color: #007d99; }
+        button.generate-btn { background-color: #027299; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 1em; font-size: 1em; }
+        button.generate-btn:hover { background-color: #005a7a; }
+        
+        /* Mapping Area */
+        .mapping-area { border-left: 4px solid #009fc2; padding-left: 1.5em; margin: 1.5em 0; background: #f8fbfd; padding-top: 1em; padding-bottom: 1em; border-radius: 0 8px 8px 0; }
+        .item-group { position: relative; margin-bottom: 1.5em; padding-bottom: 1.5em; border-bottom: 1px dashed rgba(64,78,101,0.2); }
+        .item-group:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .btn-small { background-color: #e0e5eb; color: #404e65; padding: 4px 8px; font-size: 0.8em; position: absolute; right: 0; top: 0; border: none; border-radius: 4px; cursor: pointer; }
         .btn-small:hover { background-color: #cdd4dc; }
-        .btn-add { background-color: #404e65; width: 100%; margin-bottom: 1em; border: 1px dashed rgba(255,255,255,0.5); }
-        .error { background-color: #ffebee; color: #c62828; padding: 1em; border-left: 4px solid #c62828; border-radius: 4px; margin-bottom: 1em; display: none; }
-        .item-group { border-left: 3px solid #009fc2; padding-left: 1em; margin-bottom: 1em; background: #fbfcfd; padding-top: 0.5em; padding-bottom: 0.5em; position: relative; }
+        .btn-add { background-color: #ffffff; border: 2px dashed #009fc2; color: #009fc2; width: 100%; padding: 10px; cursor: pointer; font-weight: bold; border-radius: 6px; }
+        .btn-add:hover { background: #f0f9fb; }
         
-        .input-toggle { display: flex; gap: 20px; margin-bottom: 1em; background: #eef2f5; padding: 12px; border-radius: 6px; border: 1px solid rgba(64,78,101,0.1); }
-        .input-toggle label { margin: 0; cursor: pointer; text-transform: none; color: #027299; font-size: 1em; font-weight: bold; display: flex; align-items: center; gap: 8px; }
-        .input-toggle input[type="radio"] { width: auto; margin: 0; cursor: pointer; }
-        
-        #outputArea { display: none; }
-        #outputCode { background: #2d2d2d; color: #f8f8f2; min-height: 250px; }
+        .output-box { background: #2d2d2d; color: #f8f8f2; min-height: 200px; }
+        .divider { height: 1px; background: #eee; margin: 2em 0; }
     </style>
 </head>
 <body>
 
-    <h1>Canvas Content Block Generator</h1>
-    <p style="margin-bottom: 2em;">Convert rich text or legacy HTML into perfectly formatted Canvas LMS components.</p>
+    <h1>Content Block Converters</h1>
+    <p>Select a tool below to upgrade legacy HTML, or use the "Create From Scratch" tab to format brand new text.</p>
 
-    <div id="errorBox" class="error"></div>
+    <div class="tab-container" id="tabs">
+        <button class="tab-btn active" onclick="openTool('tool-callout', this)">Callout Box</button>
+        <button class="tab-btn" onclick="openTool('tool-quote', this)">Blockquote</button>
+        <button class="tab-btn" onclick="openTool('tool-accordion', this)">Accordion</button>
+        <button class="tab-btn" onclick="openTool('tool-grid', this)">CSS Grid Cards</button>
+        <button class="tab-btn" onclick="openTool('tool-list', this)">Flexbox List Cards</button>
+        <button class="tab-btn special" onclick="openTool('tool-scratch', this)">+ Create From Scratch</button>
+    </div>
 
-    <div class="step-container">
-        <h3 class="step-header">Step 1: Input & Clean</h3>
-        <p style="font-size: 0.9em;">Choose your input type below. The tool will automatically strip hidden junk code and format legacy elements, while permanently preserving your hyperlinks and bullet points.</p>
+    <div id="tool-callout" class="tool-panel active">
+        <h2>Callout Box Converter</h2>
+        <label>Paste Old HTML Code:</label>
+        <textarea id="callout-in" placeholder="Paste old legacy HTML code here..."></textarea>
+        <button class="action-btn" onclick="extractToMap('callout')">Extract & Map Content ↓</button>
         
-        <div class="input-toggle">
-            <label><input type="radio" name="inputType" value="visual" checked> Paste Visual (Rich Text)</label>
-            <label><input type="radio" name="inputType" value="html"> Paste Raw HTML Code (Legacy Content)</label>
+        <div id="callout-map" class="mapping-area" style="display:none;">
+            <div class="item-group">
+                <label>Callout Title (Heading):</label>
+                <input type="text" id="callout-title">
+                <label>Callout Body (Accepts Paragraphs/HTML):</label>
+                <textarea id="callout-body" rows="4"></textarea>
+            </div>
+            <button class="generate-btn" onclick="generateCallout()">Generate New Callout HTML</button>
+        </div>
+        <textarea id="callout-out" class="output-box" style="display:none;" readonly></textarea>
+    </div>
+
+    <div id="tool-quote" class="tool-panel">
+        <h2>Blockquote Converter</h2>
+        <label>Paste Old HTML Code:</label>
+        <textarea id="quote-in" placeholder="Paste old legacy HTML code here..."></textarea>
+        <button class="action-btn" onclick="extractToMap('quote')">Extract & Map Content ↓</button>
+        
+        <div id="quote-map" class="mapping-area" style="display:none;">
+            <div class="item-group">
+                <label>Exact Quote Text:</label>
+                <textarea id="quote-body" rows="4"></textarea>
+            </div>
+            <button class="generate-btn" onclick="generateQuote()">Generate New Quote HTML</button>
+        </div>
+        <textarea id="quote-out" class="output-box" style="display:none;" readonly></textarea>
+    </div>
+
+    <div id="tool-accordion" class="tool-panel">
+        <h2>Collapsible Accordion Converter</h2>
+        <label>Paste Old HTML Code:</label>
+        <textarea id="accordion-in" placeholder="Paste old legacy HTML code here..."></textarea>
+        <button class="action-btn" onclick="extractToMap('accordion')">Extract & Map Content ↓</button>
+        
+        <div id="accordion-map" class="mapping-area" style="display:none;">
+            <div id="accordion-fields"></div>
+            <button class="btn-add" onclick="addPair('accordion')">+ Add Another Accordion Panel</button>
+            <button class="generate-btn" onclick="generateAccordion()">Generate New Accordion HTML</button>
+        </div>
+        <textarea id="accordion-out" class="output-box" style="display:none;" readonly></textarea>
+    </div>
+
+    <div id="tool-grid" class="tool-panel">
+        <h2>CSS Grid Cards Converter</h2>
+        <label>Paste Old HTML Code:</label>
+        <textarea id="grid-in" placeholder="Paste old legacy HTML code here..."></textarea>
+        <button class="action-btn" onclick="extractToMap('grid')">Extract & Map Content ↓</button>
+        
+        <div id="grid-map" class="mapping-area" style="display:none;">
+            <div id="grid-fields"></div>
+            <button class="btn-add" onclick="addPair('grid')">+ Add Another Grid Card</button>
+            <button class="generate-btn" onclick="generateGrid()">Generate New Grid HTML</button>
+        </div>
+        <textarea id="grid-out" class="output-box" style="display:none;" readonly></textarea>
+    </div>
+
+    <div id="tool-list" class="tool-panel">
+        <h2>Flexbox List Cards Converter</h2>
+        <label>Paste Old HTML Code:</label>
+        <textarea id="list-in" placeholder="Paste old legacy HTML code here..."></textarea>
+        <button class="action-btn" onclick="extractToMap('list')">Extract & Map Content ↓</button>
+        
+        <div id="list-map" class="mapping-area" style="display:none;">
+            <div id="list-fields"></div>
+            <button class="btn-add" onclick="addPair('list')">+ Add Another List Item</button>
+            <button class="generate-btn" onclick="generateList()">Generate New List HTML</button>
+        </div>
+        <textarea id="list-out" class="output-box" style="display:none;" readonly></textarea>
+    </div>
+
+    <div id="tool-scratch" class="tool-panel">
+        <h2>Create Block From Scratch</h2>
+        <p>Paste brand new raw text or rich text from Word/Canvas. The tool will clean it, preserve links/bullets, and let you build any component.</p>
+        
+        <label>Step 1: Paste Text</label>
+        <div class="rich-input" id="scratch-in" contenteditable="true" data-placeholder="Paste text with links or bullets here..."></div>
+        <button class="action-btn" onclick="cleanScratch()">Clean Formatting ↓</button>
+
+        <div id="scratch-step2" style="display:none;">
+            <div class="divider"></div>
+            <label>Step 2: Review Cleaned Text</label>
+            <textarea id="scratch-cleaned"></textarea>
+
+            <label>Select Target Block Type:</label>
+            <select id="scratch-type" style="background:#ffffff;">
+                <option value="callout">Callout Box</option>
+                <option value="quote">Blockquote</option>
+                <option value="accordion">Collapsible Accordion</option>
+                <option value="grid">CSS Grid Cards</option>
+                <option value="list">Flexbox List Cards</option>
+            </select>
+            <button class="action-btn" onclick="mapScratch()" style="background-color: #404e65;">Map Content ↓</button>
         </div>
 
-        <div id="visualInput" class="rich-input" contenteditable="true" data-placeholder="Paste text directly from Canvas, Word, or PDFs here..."></div>
-        <textarea id="htmlInput" placeholder="Paste legacy HTML source code here to upgrade it to the new component styling..." style="display: none;"></textarea>
-
-        <button id="cleanBtn">Clean & Extract</button>
-    </div>
-
-    <div class="step-container" id="step2" style="display: none;">
-        <h3 class="step-header">Step 2: Review Cleaned Content</h3>
-        <p style="font-size: 0.9em;">Review the extracted text. Links and lists are preserved securely as HTML tags. Ensure distinct items (like headers vs. paragraphs) are separated by a blank line.</p>
-        
-        <textarea id="cleanedInput"></textarea>
-
-        <label for="blockType">Select Target Content Block:</label>
-        <select id="blockType">
-            <option value="callout">Callout Box (Introductions & Emphasized Text)</option>
-            <option value="quote">Blockquote (Actual Quotes Only)</option>
-            <option value="accordion">Collapsible Accordion (Detailed Content Chunking)</option>
-            <option value="grid">CSS Grid Cards (Activities & Options)</option>
-            <option value="list">Flexbox List Cards (Vocabulary & Related Items)</option>
-        </select>
-        <button id="analyzeBtn" class="btn-secondary">Map Content to Block</button>
-    </div>
-
-    <div class="step-container" id="clarificationArea" style="display: none; border-color: #009fc2; border-width: 2px;">
-        <h3 class="step-header" style="color: #027299;">Step 3: Clarify & Generate</h3>
-        <p style="font-size: 0.9em; margin-bottom: 1.5em;">Review the mapped layout. If an item ended up in the wrong box, simply copy/paste it into the correct field. Add or remove items as needed.</p>
-        
-        <div id="dynamicFields"></div>
-        <button id="generateBtn">Generate Final HTML</button>
-    </div>
-
-    <div class="step-container" id="outputArea">
-        <h3 class="step-header">Final Canvas HTML</h3>
-        <button id="copyBtn" style="margin-bottom: 1em; background-color: #404e65;">Copy to Clipboard</button>
-        <textarea id="outputCode" readonly></textarea>
+        <div id="scratch-map" class="mapping-area" style="display:none;">
+            <label>Step 3: Clarify & Generate</label>
+            <p style="font-size:0.9em; margin-bottom:1em;">Check the layout. Add, remove, or edit fields as needed.</p>
+            <div id="scratch-fields"></div>
+            <div id="scratch-add-btn-container"></div>
+            <button class="generate-btn" onclick="generateScratch()">Generate Final HTML</button>
+        </div>
+        <textarea id="scratch-out" class="output-box" style="display:none;" readonly></textarea>
     </div>
 
     <script>
-        const inputRadios = document.querySelectorAll('input[name="inputType"]');
-        const visualInputEl = document.getElementById('visualInput');
-        const htmlInputEl = document.getElementById('htmlInput');
-        
-        const cleanBtn = document.getElementById('cleanBtn');
-        const step2 = document.getElementById('step2');
-        const cleanedInputEl = document.getElementById('cleanedInput');
-        const blockTypeEl = document.getElementById('blockType');
-        const analyzeBtn = document.getElementById('analyzeBtn');
-        
-        const clarificationArea = document.getElementById('clarificationArea');
-        const dynamicFields = document.getElementById('dynamicFields');
-        const generateBtn = document.getElementById('generateBtn');
-        
-        const outputArea = document.getElementById('outputArea');
-        const outputCode = document.getElementById('outputCode');
-        const errorBox = document.getElementById('errorBox');
-        const copyBtn = document.getElementById('copyBtn');
-
-        let currentType = '';
-
-        inputRadios.forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                if(e.target.value === 'visual') {
-                    visualInputEl.style.display = 'block';
-                    htmlInputEl.style.display = 'none';
-                } else {
-                    visualInputEl.style.display = 'none';
-                    htmlInputEl.style.display = 'block';
-                }
-            });
-        });
-
-        function showError(msg) {
-            errorBox.textContent = msg;
-            errorBox.style.display = 'block';
-            window.scrollTo(0, 0);
+        // Tab Switching Logic
+        function openTool(toolId, btn) {
+            document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(toolId).classList.add('active');
+            btn.classList.add('active');
         }
 
-        function hideError() {
-            errorBox.style.display = 'none';
-        }
-
-        function extractCleanHTML(node) {
+        // Shared DOM Cleaner (Preserves links and lists safely)
+        function extractCleanHTML(rawHtml) {
+            let temp = document.createElement('div');
+            temp.innerHTML = rawHtml;
             let result = '';
-            for (let child of node.childNodes) {
-                if (child.nodeType === Node.TEXT_NODE) {
-                    let text = child.textContent.replace(/\u00A0/g, ' ').replace(/\s+/g, ' ');
-                    text = text.replace(/Links to an external site\.?/gi, '');
-                    result += text;
-                } else if (child.nodeType === Node.ELEMENT_NODE) {
-                    const tag = child.tagName;
 
-                    if (child.classList && child.classList.contains('invisible')) continue;
-                    if (child.textContent.includes('Links to an external site')) {
-                        child.innerHTML = child.innerHTML.replace(/Links to an external site\.?/gi, '');
-                    }
-
-                    if (tag === 'A') {
-                        let href = child.getAttribute('href') || '#';
-                        let linkText = extractCleanHTML(child).trim();
-                        if (linkText) {
-                            result += `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color: #027299; text-decoration: underline; text-underline-offset: 3px;">${linkText}</a>`;
+            function walk(node) {
+                for (let child of node.childNodes) {
+                    if (child.nodeType === Node.TEXT_NODE) {
+                        let text = child.textContent.replace(/\u00A0/g, ' ').replace(/\s+/g, ' ');
+                        result += text.replace(/Links to an external site\.?/gi, '');
+                    } else if (child.nodeType === Node.ELEMENT_NODE) {
+                        const tag = child.tagName;
+                        if (child.textContent.includes('Links to an external site')) {
+                            child.innerHTML = child.innerHTML.replace(/Links to an external site\.?/gi, '');
                         }
-                    } else if (tag === 'STRONG' || tag === 'B') {
-                        result += `<strong>${extractCleanHTML(child)}</strong>`;
-                    } else if (tag === 'EM' || tag === 'I') {
-                        result += `<em>${extractCleanHTML(child)}</em>`;
-                    } else if (tag === 'UL' || tag === 'OL') {
-                        let listContent = '';
-                        for (let li of child.children) {
-                            if(li.tagName === 'LI') {
-                                listContent += `<li>${extractCleanHTML(li).trim()}</li>`;
+                        if (tag === 'A') {
+                            let href = child.getAttribute('href') || '#';
+                            result += `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color: #027299; text-decoration: underline; text-underline-offset: 3px;">${child.textContent.trim()}</a>`;
+                        } else if (tag === 'STRONG' || tag === 'B') {
+                            result += `<strong>${child.textContent.trim()}</strong>`;
+                        } else if (tag === 'EM' || tag === 'I') {
+                            result += `<em>${child.textContent.trim()}</em>`;
+                        } else if (tag === 'UL' || tag === 'OL') {
+                            let listContent = '';
+                            for (let li of child.children) {
+                                if (li.tagName === 'LI') listContent += `<li>${li.innerHTML.trim()}</li>`;
                             }
+                            if (listContent) result += `\n\n<${tag.toLowerCase()}>${listContent}</${tag.toLowerCase()}>\n\n`;
+                        } else if (tag === 'LI') {
+                            // Handled by parent
+                        } else if (['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes(tag)) {
+                            let inner = child.innerHTML;
+                            let cleanInner = extractCleanHTML({childNodes: child.childNodes}).trim();
+                            if (cleanInner) result += `\n\n${cleanInner}\n\n`;
+                        } else {
+                            walk(child);
                         }
-                        if (listContent) {
-                            result += `\n\n<${tag.toLowerCase()}>${listContent}</${tag.toLowerCase()}>\n\n`;
-                        }
-                    } else if (tag === 'LI') {
-                        // Handled by parent
-                    } else if (tag === 'BR') {
-                        result += '\n';
-                    } else if (['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE'].includes(tag)) {
-                        let innerText = extractCleanHTML(child).trim();
-                        if (innerText) result += `\n\n${innerText}\n\n`;
-                    } else if (!['SCRIPT', 'STYLE', 'IMG', 'IFRAME', 'OBJECT'].includes(tag)) {
-                        result += extractCleanHTML(child);
                     }
                 }
+                return result;
             }
-            return result;
+            return walk(temp).replace(/\n{3,}/g, '\n\n').trim();
         }
 
-        cleanBtn.addEventListener('click', () => {
-            hideError();
-            const isVisual = document.querySelector('input[name="inputType"]:checked').value === 'visual';
-            const rawContent = isVisual ? visualInputEl.innerHTML : htmlInputEl.value;
-
-            if (!rawContent.trim()) return showError("Please provide some input text or HTML.");
-            
-            let rawDOM = document.createElement('div');
-            rawDOM.innerHTML = rawContent;
-            
-            let cleanStr = extractCleanHTML(rawDOM);
-            cleanStr = cleanStr.replace(/\n{3,}/g, '\n\n').trim(); 
-            
-            cleanedInputEl.value = cleanStr;
-            step2.style.display = 'block';
-            clarificationArea.style.display = 'none';
-            outputArea.style.display = 'none';
-            
-            step2.scrollIntoView({ behavior: 'smooth' });
-        });
-
-        window.removeField = function(btn) { btn.parentElement.remove(); }
-
-        window.addListField = function(val = '') {
-            const div = document.createElement('div');
-            div.className = 'item-group';
-            div.innerHTML = `<button class="btn-small" onclick="removeField(this)">Remove</button>
-                <label>List Item (Flashcard text):</label><input type="text" class="mapped-item" value="${val.replace(/"/g, '&quot;')}">`;
-            document.getElementById('fieldsContainer').appendChild(div);
-        }
-
-        window.addCardField = function(title = '', body = '') {
-            const div = document.createElement('div');
-            div.className = 'item-group';
-            div.innerHTML = `<button class="btn-small" onclick="removeField(this)">Remove</button>
-                <label>Header/Title:</label><input type="text" class="mapped-title" value="${title.replace(/"/g, '&quot;')}">
-                <label>Body Content (Accepts Lists & HTML):</label><textarea class="mapped-body" rows="3">${body}</textarea>`;
-            document.getElementById('fieldsContainer').appendChild(div);
-        }
-
-        analyzeBtn.addEventListener('click', () => {
-            hideError();
-            outputArea.style.display = 'none';
-            
-            currentType = blockTypeEl.value;
-            const text = cleanedInputEl.value.trim();
-
-            if (!text) return showError("Cleaned text box is empty.");
-
-            const chunks = text.split(/\n\n+/).map(t => t.trim()).filter(t => t);
-
-            dynamicFields.innerHTML = '<div id="fieldsContainer"></div>'; 
-            const container = document.getElementById('fieldsContainer');
-
-            if (currentType === 'callout') {
-                container.innerHTML += `<div class="item-group"><label>Callout Title:</label><input type="text" class="mapped-title" value="${chunks[0] ? chunks[0].replace(/"/g, '&quot;') : ''}">
-                <label>Callout Body Paragraph(s):</label><textarea class="mapped-body" rows="4">${chunks.slice(1).join('\n\n') || chunks[0] || ''}</textarea></div>`;
-            } 
-            else if (currentType === 'quote') {
-                container.innerHTML += `<div class="item-group"><label>Exact Quote Text:</label><textarea class="mapped-body" rows="4">${text}</textarea></div>`;
-            }
-            else if (currentType === 'list') {
-                let temp = document.createElement('div');
-                temp.innerHTML = text;
-                let lis = temp.querySelectorAll('li');
-                
-                if (lis.length > 0) {
-                    lis.forEach(li => window.addListField(li.innerHTML.trim()));
-                } else {
-                    chunks.forEach(chunk => window.addListField(chunk));
-                }
-                dynamicFields.innerHTML += `<button class="btn-add" onclick="addListField()">+ Add Another List Item</button>`;
-            }
-            else if (currentType === 'accordion' || currentType === 'grid') {
-                for (let i = 0; i < chunks.length; i += 2) {
-                    window.addCardField(chunks[i] || '', chunks[i+1] || '');
-                }
-                dynamicFields.innerHTML += `<button class="btn-add" onclick="addCardField()">+ Add Another Card/Panel</button>`;
-            }
-
-            clarificationArea.style.display = 'block';
-            clarificationArea.scrollIntoView({ behavior: 'smooth' });
-        });
-
-        // Smart Formatter: Explicitly forces Canvas Slate Grey and handles zero-margins on final items
+        // Helper to safely format body content inside components
         function formatBodyHtml(rawBodyText) {
             const lines = rawBodyText.split('\n\n').filter(p => p.trim());
             return lines.map((p, index) => {
@@ -274,11 +235,9 @@
                     let temp = document.createElement('div');
                     temp.innerHTML = p;
                     let listNode = temp.firstElementChild;
-                    
                     if (listNode) {
                         listNode.setAttribute('style', 'color: #404e65; margin: 0; padding-left: 24px; line-height: 1.6;');
                         let items = listNode.querySelectorAll('li');
-                        
                         items.forEach((li, liIndex) => {
                             let isLastLi = (liIndex === items.length - 1);
                             let mb = isLastLi ? '0' : '12px'; 
@@ -286,65 +245,238 @@
                         });
                         return temp.innerHTML;
                     }
-                    return p;
-                } else {
-                    let mb = isLastElement ? '0' : '1em';
-                    return `<p style="color: #404e65; margin-top: 0; margin-bottom: ${mb}; line-height: 1.6;">${p}</p>`;
-                }
-            }).join('\n    ');
+                } 
+                let mb = isLastElement ? '0' : '1em';
+                return `<p style="color: #404e65; margin-top: 0; margin-bottom: ${mb}; line-height: 1.6;">${p}</p>`;
+            }).join('\n            ');
         }
 
-        generateBtn.addEventListener('click', () => {
+        // Add Dynamic Fields
+        function removeField(btn) { btn.parentElement.remove(); }
+
+        function addPair(containerId, isList = false, title = '', body = '') {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = 'item-group';
+            
+            if (isList) {
+                div.innerHTML = `
+                    <button class="btn-small" onclick="removeField(this)">Remove</button>
+                    <label>List Item (Flashcard Title):</label>
+                    <input type="text" class="mapped-title" value="${title.replace(/"/g, '&quot;')}">
+                    <label>Description (Paragraph):</label>
+                    <textarea class="mapped-body" rows="2">${body}</textarea>
+                `;
+            } else {
+                div.innerHTML = `
+                    <button class="btn-small" onclick="removeField(this)">Remove</button>
+                    <label>Header/Title:</label>
+                    <input type="text" class="mapped-title" value="${title.replace(/"/g, '&quot;')}">
+                    <label>Body Content (Accepts Lists/HTML):</label>
+                    <textarea class="mapped-body" rows="3">${body}</textarea>
+                `;
+            }
+            container.appendChild(div);
+        }
+
+        /* -----------------------------------------------------------
+           TOOLS 1-5: LEGACY EXTRACTORS
+        ----------------------------------------------------------- */
+        function extractToMap(tool) {
+            const rawCode = document.getElementById(`${tool}-in`).value;
+            if (!rawCode) return alert('Please paste old HTML code first.');
+            
+            const cleanText = extractCleanHTML(rawCode);
+            const chunks = cleanText.split(/\n\n+/).filter(t => t.trim());
+
+            document.getElementById(`${tool}-map`).style.display = 'block';
+
+            if (tool === 'callout') {
+                document.getElementById('callout-title').value = chunks[0] || '';
+                document.getElementById('callout-body').value = chunks.slice(1).join('\n\n') || '';
+            } else if (tool === 'quote') {
+                document.getElementById('quote-body').value = cleanText;
+            } else {
+                document.getElementById(`${tool}-fields`).innerHTML = ''; 
+                if (tool === 'list' && cleanText.includes('<li>')) {
+                    let temp = document.createElement('div');
+                    temp.innerHTML = cleanText;
+                    temp.querySelectorAll('li').forEach(li => {
+                        let innerText = li.textContent.trim().split('\n');
+                        addPair(`${tool}-fields`, true, innerText[0] || '', innerText.slice(1).join('\n') || '');
+                    });
+                } else {
+                    for (let i = 0; i < chunks.length; i += 2) {
+                        addPair(`${tool}-fields`, tool === 'list', chunks[i] || '', chunks[i+1] || '');
+                    }
+                }
+            }
+        }
+
+        /* -----------------------------------------------------------
+           TOOL 6: SCRATCH BUILDER SPECIFIC LOGIC
+        ----------------------------------------------------------- */
+        function cleanScratch() {
+            const rawDOM = document.createElement('div');
+            rawDOM.innerHTML = document.getElementById('scratch-in').innerHTML;
+            if (!rawDOM.textContent.trim()) return alert("Please paste text first.");
+            
+            const cleanStr = extractCleanHTML(rawDOM).replace(/\n{3,}/g, '\n\n').trim();
+            document.getElementById('scratch-cleaned').value = cleanStr;
+            document.getElementById('scratch-step2').style.display = 'block';
+            document.getElementById('scratch-map').style.display = 'none';
+            document.getElementById('scratch-out').style.display = 'none';
+        }
+
+        function mapScratch() {
+            const type = document.getElementById('scratch-type').value;
+            const text = document.getElementById('scratch-cleaned').value.trim();
+            if (!text) return alert("Cleaned text is empty.");
+            
+            const chunks = text.split(/\n\n+/).filter(t => t.trim());
+            const container = document.getElementById('scratch-fields');
+            const btnContainer = document.getElementById('scratch-add-btn-container');
+            container.innerHTML = '';
+            btnContainer.innerHTML = '';
+
+            if (type === 'callout') {
+                container.innerHTML = `<div class="item-group"><label>Callout Title:</label><input type="text" class="mapped-title" value="${chunks[0] ? chunks[0].replace(/"/g, '&quot;') : ''}">
+                <label>Callout Body Paragraph(s):</label><textarea class="mapped-body" rows="4">${chunks.slice(1).join('\n\n') || chunks[0] || ''}</textarea></div>`;
+            } 
+            else if (type === 'quote') {
+                container.innerHTML = `<div class="item-group"><label>Exact Quote Text:</label><textarea class="mapped-body" rows="4">${text}</textarea></div>`;
+            }
+            else if (type === 'list') {
+                let temp = document.createElement('div');
+                temp.innerHTML = text;
+                let lis = temp.querySelectorAll('li');
+                if (lis.length > 0) {
+                    lis.forEach(li => {
+                        let t = li.textContent.trim().split('\n');
+                        addPair('scratch-fields', true, t[0] || '', t.slice(1).join('\n') || '');
+                    });
+                } else {
+                    for (let i = 0; i < chunks.length; i += 2) {
+                        addPair('scratch-fields', true, chunks[i] || '', chunks[i+1] || '');
+                    }
+                }
+                btnContainer.innerHTML = `<button class="btn-add" onclick="addPair('scratch-fields', true)">+ Add Another List Item</button>`;
+            }
+            else {
+                for (let i = 0; i < chunks.length; i += 2) {
+                    addPair('scratch-fields', false, chunks[i] || '', chunks[i+1] || '');
+                }
+                btnContainer.innerHTML = `<button class="btn-add" onclick="addPair('scratch-fields', false)">+ Add Another Card/Panel</button>`;
+            }
+            
+            document.getElementById('scratch-map').style.display = 'block';
+        }
+
+        function generateScratch() {
+            const type = document.getElementById('scratch-type').value;
             let html = '';
 
-            if (currentType === 'callout') {
-                const title = document.querySelector('.mapped-title').value;
-                const bodyHtml = formatBodyHtml(document.querySelector('.mapped-body').value);
+            if (type === 'callout') {
+                const title = document.getElementById('scratch-map').querySelector('.mapped-title').value;
+                const bodyHtml = formatBodyHtml(document.getElementById('scratch-map').querySelector('.mapped-body').value);
                 html = `<div style="background-color: rgba(0, 159, 194, 0.08); border: 1px solid rgba(0, 159, 194, 0.2); border-radius: 8px; padding: 1.5em; margin: 1.5em 0;">\n    <h3 style="margin-top: 0; margin-bottom: 0.5em; color: #027299; font-size: 1.25em; line-height: 1.3;">${title}</h3>\n    ${bodyHtml}\n</div>`;
             } 
-            else if (currentType === 'quote') {
-                const body = document.querySelector('.mapped-body').value;
+            else if (type === 'quote') {
+                const body = document.getElementById('scratch-map').querySelector('.mapped-body').value;
                 html = `<blockquote style="margin: 1.5em 0; padding: 1.2em 1.5em; border-left: 4px solid #009fc2; background-color: rgba(64, 78, 101, 0.03); border-radius: 0 8px 8px 0;">\n    <p style="margin: 0; color: #404e65; font-style: italic; font-size: 1.1em; line-height: 1.6;">${body}</p>\n</blockquote>`;
             }
-            else if (currentType === 'list') {
-                const items = Array.from(document.querySelectorAll('.mapped-item')).map(inp => inp.value);
-                let listHtml = items.map(item => `    <li style="flex: 0 1 260px; border: 1px solid rgba(64, 78, 101, 0.15); border-radius: 8px; padding: 1.5em; background-color: rgba(64, 78, 101, 0.03);">\n        <p style="text-align: center; margin: 0; line-height: 1.5; color: #404e65;">${item}</p>\n    </li>`).join('\n');
-                html = `<ul style="display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin: 1.5em 0; padding: 0; list-style: none;">\n${listHtml}\n</ul>`;
+            else if (type === 'list') {
+                const titles = document.getElementById('scratch-map').querySelectorAll('.mapped-title');
+                const bodies = document.getElementById('scratch-map').querySelectorAll('.mapped-body');
+                let listHtml = '';
+                for(let i=0; i < titles.length; i++){
+                    listHtml += `    <li style="flex: 0 1 260px; border: 1px solid rgba(64, 78, 101, 0.15); border-radius: 8px; padding: 1.5em; background-color: rgba(64, 78, 101, 0.03);">\n        <h3 style="margin: 0 0 0.5em; text-align: center; color: #027299; font-size: 1.15em; line-height: 1.3;">${titles[i].value}</h3>\n        <p style="text-align: center; margin: 0; line-height: 1.5; color: #404e65;">${bodies[i].value.trim()}</p>\n    </li>\n`;
+                }
+                html = `<ul style="display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin: 1.5em 0; padding: 0; list-style: none;">\n${listHtml}</ul>`;
             }
-            else if (currentType === 'accordion') {
-                const titles = document.querySelectorAll('.mapped-title');
-                const bodies = document.querySelectorAll('.mapped-body');
+            else if (type === 'accordion') {
+                const titles = document.getElementById('scratch-map').querySelectorAll('.mapped-title');
+                const bodies = document.getElementById('scratch-map').querySelectorAll('.mapped-body');
                 let accHtml = '';
                 for(let i=0; i < titles.length; i++){
                     const formattedBody = formatBodyHtml(bodies[i].value);
-                    accHtml += `    <details style="border: 1px solid rgba(64, 78, 101, 0.15); border-left: 4px solid #027299; border-radius: 6px; background: #ffffff;">\n        <summary style="cursor: pointer; padding: 16px; font-size: 1.1em; color: #027299;"><strong>${titles[i].value}</strong></summary>\n        <div style="padding: 0 16px 16px 16px; line-height: 1.6;">\n            ${formattedBody}\n        </div>\n    </details>\n`;
+                    accHtml += `    <details style="border: 1px solid rgba(64, 78, 101, 0.15); border-left: 4px solid #027299; border-radius: 6px; background: #ffffff;">\n        <summary style="cursor: pointer; padding: 16px; font-size: 1.1em; color: #027299;"><strong>${titles[i].value}</strong></summary>\n        <div style="padding: 0 16px 16px 16px; line-height: 1.6; color: #404e65;">\n            ${formattedBody}\n        </div>\n    </details>\n`;
                 }
                 html = `<div style="display: flex; flex-direction: column; gap: 12px; margin: 1.5em 0;">\n${accHtml}</div>`;
             }
             else if (currentType === 'grid') {
-                const titles = document.querySelectorAll('.mapped-title');
-                const bodies = document.querySelectorAll('.mapped-body');
+                const titles = document.getElementById('scratch-map').querySelectorAll('.mapped-title');
+                const bodies = document.getElementById('scratch-map').querySelectorAll('.mapped-body');
                 let gridHtml = '';
                 for(let i=0; i < titles.length; i++){
                     const formattedBody = formatBodyHtml(bodies[i].value);
-                    // Box shadow removed here for Canvas compatibility
-                    gridHtml += `    <div style="display: flex; flex-direction: column; border: 1px solid rgba(64, 78, 101, 0.15); border-top: 5px solid #009fc2; border-radius: 8px; background: #ffffff;">\n        <div style="padding: 1.5em 1.5em 1em 1.5em; border-bottom: 1px solid rgba(64, 78, 101, 0.15);">\n            <h3 style="margin: 0; color: #027299; font-size: 1.25em; line-height: 1.3;">${titles[i].value}</h3>\n        </div>\n        <div style="padding: 1.5em; flex-grow: 1;">\n            ${formattedBody}\n        </div>\n    </div>\n`;
+                    gridHtml += `    <div style="display: flex; flex-direction: column; border: 1px solid rgba(64, 78, 101, 0.15); border-top: 5px solid #009fc2; border-radius: 8px; background: #ffffff;">\n        <div style="padding: 1.5em 1.5em 1em 1.5em; border-bottom: 1px solid rgba(64, 78, 101, 0.15);">\n            <h3 style="margin: 0; font-size: 1.25em; line-height: 1.3; color: #027299;">${titles[i].value}</h3>\n        </div>\n        <div style="padding: 1.5em; flex-grow: 1;">\n            ${formattedBody}\n        </div>\n    </div>\n`;
                 }
                 html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin: 1.5em 0; align-items: stretch;">\n${gridHtml}</div>`;
             }
+            showOutput('scratch', html);
+        }
 
-            outputCode.value = html;
-            outputArea.style.display = 'block';
-            outputArea.scrollIntoView({ behavior: 'smooth' });
-        });
+        /* -----------------------------------------------------------
+           FINAL TEMPLATE GENERATORS (TOOLS 1-5)
+        ----------------------------------------------------------- */
+        function generateCallout() {
+            const title = document.getElementById('callout-title').value;
+            const bodyHtml = formatBodyHtml(document.getElementById('callout-body').value);
+            const html = `<div style="background-color: rgba(0, 159, 194, 0.08); border: 1px solid rgba(0, 159, 194, 0.2); border-radius: 8px; padding: 1.5em; margin: 1.5em 0;">\n    <h3 style="margin-top: 0; margin-bottom: 0.5em; color: #027299; font-size: 1.25em; line-height: 1.3;">${title}</h3>\n    ${bodyHtml}\n</div>`;
+            showOutput('callout', html);
+        }
 
-        // Copy functionality
-        copyBtn.addEventListener('click', () => {
-            outputCode.select();
+        function generateQuote() {
+            const body = document.getElementById('quote-body').value.trim();
+            const html = `<blockquote style="margin: 1.5em 0; padding: 1.2em 1.5em; border-left: 4px solid #009fc2; background-color: rgba(64, 78, 101, 0.03); border-radius: 0 8px 8px 0;">\n    <p style="margin: 0; color: #404e65; font-style: italic; font-size: 1.1em; line-height: 1.6;">${body}</p>\n</blockquote>`;
+            showOutput('quote', html);
+        }
+
+        function generateAccordion() {
+            const titles = document.getElementById('accordion-map').querySelectorAll('.mapped-title');
+            const bodies = document.getElementById('accordion-map').querySelectorAll('.mapped-body');
+            let accHtml = '';
+            for(let i=0; i < titles.length; i++){
+                const formattedBody = formatBodyHtml(bodies[i].value);
+                accHtml += `    <details style="border: 1px solid rgba(64, 78, 101, 0.15); border-left: 4px solid #027299; border-radius: 6px; background: #ffffff;">\n        <summary style="cursor: pointer; padding: 16px; font-size: 1.1em; color: #027299;"><strong>${titles[i].value}</strong></summary>\n        <div style="padding: 0 16px 16px 16px; line-height: 1.6; color: #404e65;">\n            ${formattedBody}\n        </div>\n    </details>\n`;
+            }
+            const html = `<div style="display: flex; flex-direction: column; gap: 12px; margin: 1.5em 0;">\n${accHtml}</div>`;
+            showOutput('accordion', html);
+        }
+
+        function generateGrid() {
+            const titles = document.getElementById('grid-map').querySelectorAll('.mapped-title');
+            const bodies = document.getElementById('grid-map').querySelectorAll('.mapped-body');
+            let gridHtml = '';
+            for(let i=0; i < titles.length; i++){
+                const formattedBody = formatBodyHtml(bodies[i].value);
+                gridHtml += `    <div style="display: flex; flex-direction: column; border: 1px solid rgba(64, 78, 101, 0.15); border-top: 5px solid #009fc2; border-radius: 8px; background: #ffffff;">\n        <div style="padding: 1.5em 1.5em 1em 1.5em; border-bottom: 1px solid rgba(64, 78, 101, 0.15);">\n            <h3 style="margin: 0; font-size: 1.25em; line-height: 1.3; color: #027299;">${titles[i].value}</h3>\n        </div>\n        <div style="padding: 1.5em; flex-grow: 1;">\n            ${formattedBody}\n        </div>\n    </div>\n`;
+            }
+            const html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin: 1.5em 0; align-items: stretch;">\n${gridHtml}</div>`;
+            showOutput('grid', html);
+        }
+
+        function generateList() {
+            const titles = document.getElementById('list-map').querySelectorAll('.mapped-title');
+            const bodies = document.getElementById('list-map').querySelectorAll('.mapped-body');
+            let listHtml = '';
+            for(let i=0; i < titles.length; i++){
+                listHtml += `    <li style="flex: 0 1 260px; border: 1px solid rgba(64, 78, 101, 0.15); border-radius: 8px; padding: 1.5em; background-color: rgba(64, 78, 101, 0.03);">\n        <h3 style="margin: 0 0 0.5em; text-align: center; color: #027299; font-size: 1.15em; line-height: 1.3;">${titles[i].value}</h3>\n        <p style="text-align: center; margin: 0; line-height: 1.5; color: #404e65;">${bodies[i].value.trim()}</p>\n    </li>\n`;
+            }
+            const html = `<ul style="display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin: 1.5em 0; padding: 0; list-style: none;">\n${listHtml}</ul>`;
+            showOutput('list', html);
+        }
+
+        // Output Display & Copy Helper
+        function showOutput(tool, html) {
+            const outBox = document.getElementById(`${tool}-out`);
+            outBox.value = html;
+            outBox.style.display = 'block';
+            outBox.select();
             document.execCommand('copy');
-            copyBtn.textContent = 'Copied!';
-            setTimeout(() => { copyBtn.textContent = 'Copy to Clipboard'; }, 2000);
-        });
+            alert('Canvas HTML Generated and Copied to Clipboard!');
+        }
     </script>
 </body>
 </html>

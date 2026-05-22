@@ -8,23 +8,21 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f5f7f9; color: #404e65; line-height: 1.6; padding: 2em; max-width: 800px; margin: 0 auto; }
         h1, h2 { color: #027299; }
         label { font-weight: bold; display: block; margin-top: 1em; margin-bottom: 0.5em; }
-        select, textarea, input, .rich-input { width: 100%; padding: 12px; border: 1px solid rgba(64, 78, 101, 0.2); border-radius: 6px; box-sizing: border-box; font-family: inherit; margin-bottom: 1em; background: #ffffff; }
-        textarea { resize: vertical; min-height: 80px; }
-        .rich-input { min-height: 150px; overflow-y: auto; }
-        .rich-input:empty:before { content: attr(data-placeholder); color: #888; }
+        select, textarea, input { width: 100%; padding: 12px; border: 1px solid rgba(64, 78, 101, 0.2); border-radius: 6px; box-sizing: border-box; font-family: inherit; margin-bottom: 1em; }
+        textarea { resize: vertical; min-height: 120px; }
         button { background-color: #027299; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 1em; font-weight: bold; transition: background 0.2s; }
         button:hover { background-color: #005a7a; }
         .error { background-color: #ffebee; color: #c62828; padding: 1em; border-left: 4px solid #c62828; border-radius: 4px; margin-bottom: 1em; display: none; }
         .clarification-box { background: white; border: 1px solid #009fc2; border-radius: 8px; padding: 1.5em; margin-bottom: 1.5em; display: none; box-shadow: 0 4px 12px rgba(64, 78, 101, 0.08); }
         .clarification-box h3 { margin-top: 0; color: #009fc2; }
         #outputArea { display: none; margin-top: 2em; }
-        #outputCode { background: #2d2d2d; color: #f8f8f2; font-family: monospace; font-size: 0.9em; min-height: 250px; }
+        #outputCode { background: #2d2d2d; color: #f8f8f2; font-family: monospace; font-size: 0.9em; }
     </style>
 </head>
 <body>
 
     <h1>Canvas Content Block Generator</h1>
-    <p>Paste your text (links will be preserved!), select the appropriate block type, and click "Analyze" to map the content.</p>
+    <p>Paste your raw text, select the appropriate block type, and click "Analyze" to generate accessible Canvas HTML.</p>
 
     <div id="errorBox" class="error"></div>
 
@@ -37,5 +35,170 @@
         <option value="list">Flexbox List Cards (Vocabulary & Related Items)</option>
     </select>
 
-    <label for="rawInput">Paste Rich Text Here:</label>
-    <div id="rawInput" class="rich-input" contenteditable="true" data-
+    <label for="rawInput">Paste Raw Text Here:</label>
+    <textarea id="rawInput" placeholder="Paste your text here. Use double line breaks to separate headings from body text or list items..."></textarea>
+
+    <button id="analyzeBtn">Analyze & Map Content</button>
+
+    <div id="clarificationArea" class="clarification-box">
+        <h3>Verify Content Mapping</h3>
+        <p style="font-size: 0.9em; margin-bottom: 1.5em;">We have separated your text based on line breaks. Please clarify what text belongs to which element before generating the HTML.</p>
+        <div id="dynamicFields"></div>
+        <button id="generateBtn" style="margin-top: 1em; background-color: #009fc2;">Generate HTML</button>
+    </div>
+
+    <div id="outputArea">
+        <h2>Your Canvas HTML</h2>
+        <button id="copyBtn" style="margin-bottom: 1em;">Copy to Clipboard</button>
+        <textarea id="outputCode" readonly rows="12"></textarea>
+    </div>
+
+    <script>
+        const blockTypeEl = document.getElementById('blockType');
+        const rawInputEl = document.getElementById('rawInput');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const clarificationArea = document.getElementById('clarificationArea');
+        const dynamicFields = document.getElementById('dynamicFields');
+        const generateBtn = document.getElementById('generateBtn');
+        const outputArea = document.getElementById('outputArea');
+        const outputCode = document.getElementById('outputCode');
+        const errorBox = document.getElementById('errorBox');
+        const copyBtn = document.getElementById('copyBtn');
+
+        function showError(msg) {
+            errorBox.textContent = msg;
+            errorBox.style.display = 'block';
+            clarificationArea.style.display = 'none';
+            outputArea.style.display = 'none';
+        }
+
+        function hideError() {
+            errorBox.style.display = 'none';
+        }
+
+        // Step 1: Analyze text and build clarification fields
+        analyzeBtn.addEventListener('click', () => {
+            hideError();
+            outputArea.style.display = 'none';
+            const type = blockTypeEl.value;
+            const text = rawInputEl.value.trim();
+
+            if (!text) return showError("Please paste some text first.");
+
+            // Basic array splitting by double line breaks or single line breaks
+            const chunks = text.split(/\n+/).map(t => t.trim()).filter(t => t);
+
+            // Validation Rule 1: Quotes must look like quotes
+            if (type === 'quote') {
+                if (!text.includes('"') && !text.includes("'") && !text.includes('“') && !text.includes('”')) {
+                    return showError("Accessibility Error: Blockquotes must only be used for actual quotes. Your text does not contain quotation marks.");
+                }
+            }
+
+            // Validation Rule 2: Lists must have multiple items
+            if (type === 'list' && chunks.length < 2) {
+                return showError("Semantic Error: Flexbox List Cards must be used for lists. Please provide at least two distinct items separated by line breaks.");
+            }
+
+            // Generate Clarification Fields based on type
+            dynamicFields.innerHTML = ''; 
+
+            if (type === 'callout') {
+                dynamicFields.innerHTML += `<label>Callout Title:</label><input type="text" class="mapped-title" value="${chunks[0] || ''}">`;
+                const bodyText = chunks.slice(1).join('\n\n');
+                dynamicFields.innerHTML += `<label>Callout Body Paragraph(s):</label><textarea class="mapped-body">${bodyText || chunks[0] || ''}</textarea>`;
+            } 
+            else if (type === 'quote') {
+                dynamicFields.innerHTML += `<label>Exact Quote Text:</label><textarea class="mapped-body">${text}</textarea>`;
+            }
+            else if (type === 'list') {
+                chunks.forEach((chunk, index) => {
+                    dynamicFields.innerHTML += `<label>List Item ${index + 1}:</label><input type="text" class="mapped-item" value="${chunk}">`;
+                });
+            }
+            else if (type === 'accordion' || type === 'grid') {
+                // Try to pair them up (Title, Body, Title, Body)
+                for (let i = 0; i < chunks.length; i += 2) {
+                    const num = Math.floor(i/2) + 1;
+                    dynamicFields.innerHTML += `<div style="border-left: 3px solid #027299; padding-left: 1em; margin-bottom: 1em;">
+                        <label>Item ${num} Header/Title:</label><input type="text" class="mapped-title" value="${chunks[i] || ''}">
+                        <label>Item ${num} Body Content:</label><textarea class="mapped-body">${chunks[i+1] || ''}</textarea>
+                    </div>`;
+                }
+            }
+
+            clarificationArea.style.display = 'block';
+        });
+
+        // Step 2: Generate HTML from clarified fields
+        generateBtn.addEventListener('click', () => {
+            const type = blockTypeEl.value;
+            let html = '';
+
+            if (type === 'callout') {
+                const title = document.querySelector('.mapped-title').value;
+                const bodyLines = document.querySelector('.mapped-body').value.split('\n\n').filter(p => p);
+                let bodyHtml = bodyLines.map(p => `<p style="margin: 0 0 1em 0; line-height: 1.6;">${p}</p>`).join('\n    ');
+                
+                html = `<div style="background-color: rgba(0, 159, 194, 0.08); border: 1px solid rgba(0, 159, 194, 0.2); border-radius: 8px; padding: 1.5em; margin: 1.5em 0;">
+    <h3 style="margin-top: 0; margin-bottom: 0.5em; color: #027299; font-size: 1.25em;">${title}</h3>
+    ${bodyHtml}
+</div>`;
+            } 
+            else if (type === 'quote') {
+                const body = document.querySelector('.mapped-body').value;
+                html = `<blockquote style="margin: 1.5em 0; padding: 1.2em 1.5em; border-left: 4px solid #009fc2; background-color: rgba(64, 78, 101, 0.03); border-radius: 0 8px 8px 0;">
+    <p style="margin: 0; font-style: italic; font-size: 1.1em; line-height: 1.6;">${body}</p>
+</blockquote>`;
+            }
+            else if (type === 'list') {
+                const items = Array.from(document.querySelectorAll('.mapped-item')).map(inp => inp.value);
+                let listHtml = items.map(item => `    <li style="flex: 0 1 260px; border: 1px solid rgba(64, 78, 101, 0.15); border-radius: 8px; padding: 1.5em; background-color: rgba(64, 78, 101, 0.03);">
+        <p style="text-align: center; margin: 0; line-height: 1.5;">${item}</p>
+    </li>`).join('\n');
+                html = `<ul style="display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin: 1.5em 0; padding: 0; list-style: none;">\n${listHtml}\n</ul>`;
+            }
+            else if (type === 'accordion') {
+                const titles = document.querySelectorAll('.mapped-title');
+                const bodies = document.querySelectorAll('.mapped-body');
+                let accHtml = '';
+                for(let i=0; i < titles.length; i++){
+                    accHtml += `    <details style="border: 1px solid rgba(64, 78, 101, 0.15); border-left: 4px solid #027299; border-radius: 6px; background: #ffffff;">
+        <summary style="cursor: pointer; padding: 16px; font-size: 1.1em; color: #027299;"><strong>${titles[i].value}</strong></summary>
+        <div style="padding: 0 16px 16px 16px; line-height: 1.6;">${bodies[i].value}</div>
+    </details>\n`;
+                }
+                html = `<div style="display: flex; flex-direction: column; gap: 12px; margin: 1.5em 0;">\n${accHtml}</div>`;
+            }
+            else if (type === 'grid') {
+                const titles = document.querySelectorAll('.mapped-title');
+                const bodies = document.querySelectorAll('.mapped-body');
+                let gridHtml = '';
+                for(let i=0; i < titles.length; i++){
+                    gridHtml += `    <div style="display: flex; flex-direction: column; border: 1px solid rgba(64, 78, 101, 0.15); border-top: 5px solid #009fc2; border-radius: 8px; background: #ffffff; box-shadow: 0 4px 12px rgba(64, 78, 101, 0.08);">
+        <div style="padding: 1.5em 1.5em 1em 1.5em; border-bottom: 1px solid rgba(64, 78, 101, 0.15);">
+            <h3 style="margin: 0; color: #027299; font-size: 1.25em;">${titles[i].value}</h3>
+        </div>
+        <div style="padding: 1.5em; flex-grow: 1;">
+            <p style="margin-top: 0; margin-bottom: 0; line-height: 1.6;">${bodies[i].value}</p>
+        </div>
+    </div>\n`;
+                }
+                html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin: 1.5em 0; align-items: stretch;">\n${gridHtml}</div>`;
+            }
+
+            outputCode.value = html;
+            clarificationArea.style.display = 'none';
+            outputArea.style.display = 'block';
+        });
+
+        // Copy functionality
+        copyBtn.addEventListener('click', () => {
+            outputCode.select();
+            document.execCommand('copy');
+            copyBtn.textContent = 'Copied!';
+            setTimeout(() => { copyBtn.textContent = 'Copy to Clipboard'; }, 2000);
+        });
+    </script>
+</body>
+</html>

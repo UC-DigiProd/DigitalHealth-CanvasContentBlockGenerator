@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Health Content Block Converters</title>
+    <title>Digital health content block converters</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f5f7f9; color: #404e65; line-height: 1.6; padding: 2em; max-width: 900px; margin: 0 auto; }
         h1, h2, h3 { color: #027299; margin-bottom: 0.5em; }
@@ -50,139 +50,139 @@
 </head>
 <body>
 
-    <h1>Content Block Converters</h1>
-    <p>Select a tool below to upgrade legacy HTML, or use the "Create From Scratch" tab to format brand new text.</p>
+    <h1>Digital Health (Micro): Content block converters</h1>
+    <p>Select a tool below to upgrade legacy HTML, or use the "create From scratch" tab to format brand new text.</p>
 
     <div class="tab-container" id="tabs">
-        <button class="tab-btn active" onclick="openTool('tool-callout', this)">Callout Box</button>
+        <button class="tab-btn active" onclick="openTool('tool-callout', this)">Callout box</button>
         <button class="tab-btn" onclick="openTool('tool-quote', this)">Blockquote</button>
         <button class="tab-btn" onclick="openTool('tool-accordion', this)">Accordion</button>
-        <button class="tab-btn" onclick="openTool('tool-grid', this)">CSS Grid Cards</button>
-        <button class="tab-btn" onclick="openTool('tool-list', this)">Flexbox List Cards</button>
+        <button class="tab-btn" onclick="openTool('tool-grid', this)">CSS grid cards</button>
+        <button class="tab-btn" onclick="openTool('tool-list', this)">Flexbox list cards</button>
         <!-- The New Scratch Builder Tab -->
-        <button class="tab-btn special" onclick="openTool('tool-scratch', this)">+ Create From Scratch</button>
+        <button class="tab-btn special" onclick="openTool('tool-scratch', this)">+ Create from scratch</button>
     </div>
 
     <!-- TOOL 1: CALLOUT -->
     <div id="tool-callout" class="tool-panel active">
-        <h2>Callout Box Converter</h2>
-        <label>Paste Old HTML Code:</label>
+        <h2>Callout box converter</h2>
+        <label>Paste old HTML code:</label>
         <textarea id="callout-in" placeholder="Paste old legacy HTML code here..."></textarea>
-        <button class="action-btn" onclick="extractToMap('callout')">Extract & Map Content ↓</button>
+        <button class="action-btn" onclick="extractToMap('callout')">Extract & map content</button>
         
         <div id="callout-map" class="mapping-area" style="display:none;">
             <div class="item-group">
-                <label>Callout Title (Heading):</label>
+                <label>Callout title (heading):</label>
                 <input type="text" id="callout-title">
-                <label>Callout Body (Accepts Paragraphs/HTML):</label>
+                <label>Callout body (accepts paragraphs/HTML):</label>
                 <textarea id="callout-body" rows="4"></textarea>
             </div>
-            <button class="generate-btn" onclick="generateCallout()">Generate New Callout HTML</button>
+            <button class="generate-btn" onclick="generateCallout()">Generate new callout HTML</button>
         </div>
         <textarea id="callout-out" class="output-box" style="display:none;" readonly></textarea>
-        <button class="reset-btn" onclick="resetTool('callout')">Reset Tool</button>
+        <button class="reset-btn" onclick="resetTool('callout')">Reset tool</button>
     </div>
 
     <!-- TOOL 2: BLOCKQUOTE -->
     <div id="tool-quote" class="tool-panel">
-        <h2>Blockquote Converter</h2>
-        <label>Paste Old HTML Code:</label>
+        <h2>Blockquote converter</h2>
+        <label>Paste old HTML code:</label>
         <textarea id="quote-in" placeholder="Paste old legacy HTML code here..."></textarea>
-        <button class="action-btn" onclick="extractToMap('quote')">Extract & Map Content ↓</button>
+        <button class="action-btn" onclick="extractToMap('quote')">Extract & map content</button>
         
         <div id="quote-map" class="mapping-area" style="display:none;">
             <div class="item-group">
-                <label>Exact Quote Text:</label>
+                <label>Exact quote text:</label>
                 <textarea id="quote-body" rows="4"></textarea>
             </div>
-            <button class="generate-btn" onclick="generateQuote()">Generate New Quote HTML</button>
+            <button class="generate-btn" onclick="generateQuote()">Generate new quote HTML</button>
         </div>
         <textarea id="quote-out" class="output-box" style="display:none;" readonly></textarea>
-        <button class="reset-btn" onclick="resetTool('quote')">Reset Tool</button>
+        <button class="reset-btn" onclick="resetTool('quote')">Reset tool</button>
     </div>
 
     <!-- TOOL 3: ACCORDION -->
     <div id="tool-accordion" class="tool-panel">
-        <h2>Collapsible Accordion Converter</h2>
-        <label>Paste Old HTML Code:</label>
+        <h2>Collapsible accordion converter</h2>
+        <label>Paste old HTML code:</label>
         <textarea id="accordion-in" placeholder="Paste old legacy HTML code here..."></textarea>
-        <button class="action-btn" onclick="extractToMap('accordion')">Extract & Map Content ↓</button>
+        <button class="action-btn" onclick="extractToMap('accordion')">Extract & map content</button>
         
         <div id="accordion-map" class="mapping-area" style="display:none;">
             <div id="accordion-fields"></div>
-            <button class="btn-add" onclick="addPair('accordion')">+ Add Another Accordion Panel</button>
-            <button class="generate-btn" onclick="generateAccordion()">Generate New Accordion HTML</button>
+            <button class="btn-add" onclick="addPair('accordion')">+ Add another accordion panel</button>
+            <button class="generate-btn" onclick="generateAccordion()">Generate new accordion HTML</button>
         </div>
         <textarea id="accordion-out" class="output-box" style="display:none;" readonly></textarea>
-        <button class="reset-btn" onclick="resetTool('accordion')">Reset Tool</button>
+        <button class="reset-btn" onclick="resetTool('accordion')">Reset tool</button>
     </div>
 
     <!-- TOOL 4: GRID CARDS -->
     <div id="tool-grid" class="tool-panel">
-        <h2>CSS Grid Cards Converter</h2>
-        <label>Paste Old HTML Code:</label>
+        <h2>CSS grid cards converter</h2>
+        <label>Paste old HTML code:</label>
         <textarea id="grid-in" placeholder="Paste old legacy HTML code here..."></textarea>
-        <button class="action-btn" onclick="extractToMap('grid')">Extract & Map Content ↓</button>
+        <button class="action-btn" onclick="extractToMap('grid')">Extract & Map Content</button>
         
         <div id="grid-map" class="mapping-area" style="display:none;">
             <div id="grid-fields"></div>
-            <button class="btn-add" onclick="addPair('grid')">+ Add Another Grid Card</button>
-            <button class="generate-btn" onclick="generateGrid()">Generate New Grid HTML</button>
+            <button class="btn-add" onclick="addPair('grid')">+ Add another grid card</button>
+            <button class="generate-btn" onclick="generateGrid()">Generate new grid HTML</button>
         </div>
         <textarea id="grid-out" class="output-box" style="display:none;" readonly></textarea>
-        <button class="reset-btn" onclick="resetTool('grid')">Reset Tool</button>
+        <button class="reset-btn" onclick="resetTool('grid')">Reset tool</button>
     </div>
 
     <!-- TOOL 5: LIST CARDS -->
     <div id="tool-list" class="tool-panel">
-        <h2>Flexbox List Cards Converter</h2>
-        <label>Paste Old HTML Code:</label>
+        <h2>Flexbox list cards converter</h2>
+        <label>Paste old HTML code:</label>
         <textarea id="list-in" placeholder="Paste old legacy HTML code here..."></textarea>
-        <button class="action-btn" onclick="extractToMap('list')">Extract & Map Content ↓</button>
+        <button class="action-btn" onclick="extractToMap('list')">Extract & map content</button>
         
         <div id="list-map" class="mapping-area" style="display:none;">
             <div id="list-fields"></div>
-            <button class="btn-add" onclick="addPair('list')">+ Add Another List Item</button>
-            <button class="generate-btn" onclick="generateList()">Generate New List HTML</button>
+            <button class="btn-add" onclick="addPair('list')">+ Add another list item</button>
+            <button class="generate-btn" onclick="generateList()">Generate new list HTML</button>
         </div>
         <textarea id="list-out" class="output-box" style="display:none;" readonly></textarea>
-        <button class="reset-btn" onclick="resetTool('list')">Reset Tool</button>
+        <button class="reset-btn" onclick="resetTool('list')">Reset tool</button>
     </div>
 
     <!-- TOOL 6: CREATE FROM SCRATCH -->
     <div id="tool-scratch" class="tool-panel">
-        <h2>Create Block From Scratch</h2>
-        <p>Paste brand new raw text or rich text from Word/Canvas. The tool will clean it, preserve links/bullets, and let you build any component.</p>
+        <h2>Create block from scratch</h2>
+        <p>Paste brand new raw text or rich text. The tool will clean it, preserve links/bullets, and let you build any component.</p>
         
-        <label>Step 1: Paste Text</label>
+        <label>Step 1: Paste text</label>
         <div class="rich-input" id="scratch-in" contenteditable="true" data-placeholder="Paste text with links or bullets here..."></div>
-        <button class="action-btn" onclick="cleanScratch()">Clean Formatting ↓</button>
+        <button class="action-btn" onclick="cleanScratch()">Clean Formatting</button>
 
         <div id="scratch-step2" style="display:none;">
             <div class="divider"></div>
-            <label>Step 2: Review Cleaned Text</label>
+            <label>Step 2: Review cleaned text</label>
             <textarea id="scratch-cleaned"></textarea>
 
-            <label>Select Target Block Type:</label>
+            <label>Select target block type:</label>
             <select id="scratch-type" style="background:#ffffff;">
-                <option value="callout">Callout Box</option>
+                <option value="callout">Callout box</option>
                 <option value="quote">Blockquote</option>
-                <option value="accordion">Collapsible Accordion</option>
-                <option value="grid">CSS Grid Cards</option>
-                <option value="list">Flexbox List Cards</option>
+                <option value="accordion">Collapsible accordion</option>
+                <option value="grid">CSS grid cards</option>
+                <option value="list">Flexbox list cards</option>
             </select>
-            <button class="action-btn" onclick="mapScratch()" style="background-color: #404e65;">Map Content ↓</button>
+            <button class="action-btn" onclick="mapScratch()" style="background-color: #404e65;">Map content</button>
         </div>
 
         <div id="scratch-map" class="mapping-area" style="display:none;">
-            <label>Step 3: Clarify & Generate</label>
+            <label>Step 3: Clarify & generate</label>
             <p style="font-size:0.9em; margin-bottom:1em;">Check the layout. Add, remove, or edit fields as needed.</p>
             <div id="scratch-fields"></div>
             <div id="scratch-add-btn-container"></div>
-            <button class="generate-btn" onclick="generateScratch()">Generate Final HTML</button>
+            <button class="generate-btn" onclick="generateScratch()">Generate final HTML</button>
         </div>
         <textarea id="scratch-out" class="output-box" style="display:none;" readonly></textarea>
-        <button class="reset-btn" onclick="resetTool('scratch')">Reset Tool</button>
+        <button class="reset-btn" onclick="resetTool('scratch')">Reset tool</button>
     </div>
 
     <script>

@@ -6,62 +6,87 @@
     <title>Canvas Content Block Generator</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f5f7f9; color: #404e65; line-height: 1.6; padding: 2em; max-width: 800px; margin: 0 auto; }
-        h1, h2 { color: #027299; }
-        label { font-weight: bold; display: block; margin-top: 1em; margin-bottom: 0.5em; }
-        select, textarea, input, .rich-input { width: 100%; padding: 12px; border: 1px solid rgba(64, 78, 101, 0.2); border-radius: 6px; box-sizing: border-box; font-family: inherit; margin-bottom: 1em; background: #ffffff; }
-        textarea { resize: vertical; min-height: 80px; }
-        .rich-input { min-height: 150px; overflow-y: auto; }
+        h1, h2 { color: #027299; margin-bottom: 0.2em; }
+        .step-container { background: #ffffff; border: 1px solid rgba(64, 78, 101, 0.15); border-radius: 8px; padding: 1.5em; margin-bottom: 1.5em; box-shadow: 0 4px 12px rgba(64, 78, 101, 0.04); }
+        .step-header { font-size: 1.1em; font-weight: bold; color: #009fc2; margin-top: 0; margin-bottom: 1em; border-bottom: 2px solid rgba(0, 159, 194, 0.1); padding-bottom: 0.5em; }
+        label { font-weight: bold; display: block; margin-top: 1em; margin-bottom: 0.5em; font-size: 0.9em; text-transform: uppercase; letter-spacing: 0.5px; color: #666; }
+        select, textarea, input, .rich-input { width: 100%; padding: 12px; border: 1px solid rgba(64, 78, 101, 0.2); border-radius: 6px; box-sizing: border-box; font-family: inherit; margin-bottom: 1em; }
+        textarea { resize: vertical; min-height: 120px; font-family: monospace; font-size: 0.9em; background: #fafafa; }
+        .rich-input { min-height: 150px; overflow-y: auto; background: #ffffff; }
         .rich-input:empty:before { content: attr(data-placeholder); color: #888; }
         button { background-color: #027299; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 1em; font-weight: bold; transition: background 0.2s; }
         button:hover { background-color: #005a7a; }
+        .btn-secondary { background-color: #009fc2; }
+        .btn-secondary:hover { background-color: #007d99; }
         .error { background-color: #ffebee; color: #c62828; padding: 1em; border-left: 4px solid #c62828; border-radius: 4px; margin-bottom: 1em; display: none; }
-        .clarification-box { background: white; border: 1px solid #009fc2; border-radius: 8px; padding: 1.5em; margin-bottom: 1.5em; display: none; box-shadow: 0 4px 12px rgba(64, 78, 101, 0.08); }
-        .clarification-box h3 { margin-top: 0; color: #009fc2; }
-        #outputArea { display: none; margin-top: 2em; }
-        #outputCode { background: #2d2d2d; color: #f8f8f2; font-family: monospace; font-size: 0.9em; min-height: 250px; }
+        #outputArea { display: none; }
+        #outputCode { background: #2d2d2d; color: #f8f8f2; min-height: 250px; }
     </style>
 </head>
 <body>
 
     <h1>Canvas Content Block Generator</h1>
-    <p>Paste your text (links will be preserved!), select the appropriate block type, and click "Analyze" to map the content.</p>
+    <p style="margin-bottom: 2em;">Convert rich text into perfectly formatted, accessible Canvas LMS components.</p>
 
     <div id="errorBox" class="error"></div>
 
-    <label for="blockType">Select Content Block Type:</label>
-    <select id="blockType">
-        <option value="callout">Callout Box (Introductions & Emphasized Text)</option>
-        <option value="quote">Blockquote (Actual Quotes Only)</option>
-        <option value="accordion">Collapsible Accordion (Detailed Content Chunking)</option>
-        <option value="grid">CSS Grid Cards (Activities & Options)</option>
-        <option value="list">Flexbox List Cards (Vocabulary & Related Items)</option>
-    </select>
-
-    <label for="rawInput">Paste Rich Text Here:</label>
-    <div id="rawInput" class="rich-input" contenteditable="true" data-placeholder="Paste your text here. Use the 'Enter' key to separate headings from body text or list items. Links will be retained automatically!"></div>
-
-    <button id="analyzeBtn">Analyze & Map Content</button>
-
-    <div id="clarificationArea" class="clarification-box">
-        <h3>Verify Content Mapping</h3>
-        <p style="font-size: 0.9em; margin-bottom: 1.5em;">We have separated your text based on line breaks. Hyperlinks are displayed as HTML tags. Please clarify what text belongs to which element before generating.</p>
-        <div id="dynamicFields"></div>
-        <button id="generateBtn" style="margin-top: 1em; background-color: #009fc2;">Generate HTML</button>
+    <div class="step-container">
+        <h3 class="step-header">Step 1: Paste & Clean</h3>
+        <p style="font-size: 0.9em;">Paste your content from Word/Canvas below. It will look messy, but the cleaner will strip hidden junk while preserving your hyperlinks.</p>
+        
+        <label>Raw Rich Text Input:</label>
+        <div id="rawInput" class="rich-input" contenteditable="true" data-placeholder="Paste your text with links here..."></div>
+        
+        <button id="cleanBtn">Clean Formatting</button>
     </div>
 
-    <div id="outputArea">
-        <h2>Your Canvas HTML</h2>
-        <button id="copyBtn" style="margin-bottom: 1em;">Copy to Clipboard</button>
+    <div class="step-container" id="step2" style="display: none;">
+        <h3 class="step-header">Step 2: Verify Chunking</h3>
+        <p style="font-size: 0.9em;">Review the cleaned text below. Ensure each distinct part of your content (titles, body paragraphs, list items) is separated by a <strong>blank line</strong> (hit Enter twice).</p>
+        
+        <label>Cleaned Text (Links Retained as HTML):</label>
+        <textarea id="cleanedInput"></textarea>
+
+        <label for="blockType">Select Content Block Type:</label>
+        <select id="blockType">
+            <option value="callout">Callout Box (Introductions & Emphasized Text)</option>
+            <option value="quote">Blockquote (Actual Quotes Only)</option>
+            <option value="accordion">Collapsible Accordion (Detailed Content Chunking)</option>
+            <option value="grid">CSS Grid Cards (Activities & Options)</option>
+            <option value="list">Flexbox List Cards (Vocabulary & Related Items)</option>
+        </select>
+
+        <button id="analyzeBtn" class="btn-secondary">Map Content</button>
+    </div>
+
+    <div class="step-container" id="clarificationArea" style="display: none; border-color: #009fc2;">
+        <h3 class="step-header" style="color: #027299;">Step 3: Clarify & Generate</h3>
+        <p style="font-size: 0.9em; margin-bottom: 1.5em;">Review how the text has been mapped to the Canvas component. Adjust if necessary.</p>
+        
+        <div id="dynamicFields"></div>
+        
+        <button id="generateBtn">Generate HTML</button>
+    </div>
+
+    <div class="step-container" id="outputArea">
+        <h3 class="step-header">Final Canvas HTML</h3>
+        <button id="copyBtn" style="margin-bottom: 1em; background-color: #404e65;">Copy to Clipboard</button>
         <textarea id="outputCode" readonly></textarea>
     </div>
 
     <script>
-        const blockTypeEl = document.getElementById('blockType');
         const rawInputEl = document.getElementById('rawInput');
+        const cleanBtn = document.getElementById('cleanBtn');
+        
+        const step2 = document.getElementById('step2');
+        const cleanedInputEl = document.getElementById('cleanedInput');
+        const blockTypeEl = document.getElementById('blockType');
         const analyzeBtn = document.getElementById('analyzeBtn');
+        
         const clarificationArea = document.getElementById('clarificationArea');
         const dynamicFields = document.getElementById('dynamicFields');
         const generateBtn = document.getElementById('generateBtn');
+        
         const outputArea = document.getElementById('outputArea');
         const outputCode = document.getElementById('outputCode');
         const errorBox = document.getElementById('errorBox');
@@ -70,81 +95,84 @@
         function showError(msg) {
             errorBox.textContent = msg;
             errorBox.style.display = 'block';
-            clarificationArea.style.display = 'none';
-            outputArea.style.display = 'none';
+            window.scrollTo(0, 0);
         }
 
         function hideError() {
             errorBox.style.display = 'none';
         }
 
-        // Custom Sanitizer: Cleans junk code but keeps Links and basic formatting
-        function sanitizeAndChunk(rawHTML) {
-            const temp = document.createElement('div');
-            temp.innerHTML = rawHTML;
-
-            // Strip out dangerous/unwanted tags entirely
-            const removeTags = ['SCRIPT', 'STYLE', 'IMG', 'IFRAME', 'OBJECT'];
-            removeTags.forEach(tag => {
-                temp.querySelectorAll(tag).forEach(el => el.remove());
-            });
-
-            // Strip ALL attributes from all elements EXCEPT href on links
-            const allEls = temp.querySelectorAll('*');
-            allEls.forEach(el => {
-                const isLink = el.tagName === 'A';
-                const href = el.getAttribute('href');
-                
-                while(el.attributes.length > 0) {
-                    el.removeAttribute(el.attributes[0].name);
+        // Custom DOM Walker: Extracts text, replaces block tags with double line breaks, formats links.
+        function extractCleanText(node) {
+            let result = '';
+            for (let child of node.childNodes) {
+                if (child.nodeType === Node.TEXT_NODE) {
+                    // Replace non-breaking spaces and excessive whitespace
+                    result += child.textContent.replace(/\u00A0/g, ' ').replace(/\s+/g, ' ');
+                } else if (child.nodeType === Node.ELEMENT_NODE) {
+                    const tag = child.tagName;
+                    if (tag === 'A') {
+                        let href = child.getAttribute('href') || '#';
+                        let linkText = child.textContent.trim();
+                        if (linkText) {
+                            // Apply Canvas styling directly to extracted links
+                            result += `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color: #027299; text-decoration: underline; text-underline-offset: 3px;">${linkText}</a>`;
+                        }
+                    } else if (tag === 'BR') {
+                        result += '\n';
+                    } else if (['P', 'DIV', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes(tag)) {
+                        let innerText = extractCleanText(child).trim();
+                        if (innerText) result += innerText + '\n\n';
+                    } else {
+                        // Recursively process spans, b, i, strong, etc.
+                        result += extractCleanText(child);
+                    }
                 }
-
-                // Restore link integrity and force safe tab-opening
-                if (isLink && href) {
-                    el.setAttribute('href', href);
-                    el.setAttribute('target', '_blank');
-                    el.setAttribute('rel', 'noopener noreferrer');
-                }
-            });
-
-            // Replace structural block tags with our custom chunk divider
-            let htmlStr = temp.innerHTML;
-            htmlStr = htmlStr.replace(/<\/p>|<\/div>|<\/li>/gi, '||SPLIT||');
-            htmlStr = htmlStr.replace(/<br\s*\/?>/gi, '||SPLIT||');
-            htmlStr = htmlStr.replace(/<p>|<div>|<ul>|<ol>|<li>/gi, ''); 
-            
-            // Split the string and clean up whitespace
-            return htmlStr.split('||SPLIT||')
-                .map(s => s.trim())
-                .filter(s => s.length > 0);
+            }
+            return result;
         }
 
-        // Step 1: Analyze text and build clarification fields
+        // ACTION 1: Clean
+        cleanBtn.addEventListener('click', () => {
+            hideError();
+            if (!rawInputEl.textContent.trim()) return showError("Please paste some text first.");
+            
+            // Run the extractor on the hidden rich DOM
+            let rawDOM = document.createElement('div');
+            rawDOM.innerHTML = rawInputEl.innerHTML;
+            let cleanStr = extractCleanText(rawDOM);
+
+            // Clean up excessive line breaks
+            cleanStr = cleanStr.replace(/\n{3,}/g, '\n\n').trim();
+            
+            cleanedInputEl.value = cleanStr;
+            step2.style.display = 'block';
+            clarificationArea.style.display = 'none';
+            outputArea.style.display = 'none';
+        });
+
+        // ACTION 2: Analyze & Map
         analyzeBtn.addEventListener('click', () => {
             hideError();
             outputArea.style.display = 'none';
+            
             const type = blockTypeEl.value;
-            const plainText = rawInputEl.textContent.trim(); 
-            const htmlContent = rawInputEl.innerHTML.trim();
+            const text = cleanedInputEl.value.trim();
 
-            if (!plainText) return showError("Please paste some text first.");
+            if (!text) return showError("Cleaned text box is empty.");
 
-            // Run the custom sanitizer to get HTML chunks
-            const chunks = sanitizeAndChunk(htmlContent);
+            const chunks = text.split(/\n\n+/).map(t => t.trim()).filter(t => t);
 
-            // Validation Rule 1: Quotes must look like quotes
+            // Validations
             if (type === 'quote') {
-                if (!plainText.includes('"') && !plainText.includes("'") && !plainText.includes('“') && !plainText.includes('”')) {
+                if (!text.includes('"') && !text.includes("'") && !text.includes('“') && !text.includes('”')) {
                     return showError("Accessibility Error: Blockquotes must only be used for actual quotes. Your text does not contain quotation marks.");
                 }
             }
-
-            // Validation Rule 2: Lists must have multiple items
             if (type === 'list' && chunks.length < 2) {
-                return showError("Semantic Error: Flexbox List Cards must be used for lists. Please provide at least two distinct items separated by line breaks.");
+                return showError("Semantic Error: Flexbox List Cards must be used for lists. Please ensure you have at least two distinct items separated by blank lines in Step 2.");
             }
 
-            // Generate Clarification Fields
             dynamicFields.innerHTML = ''; 
 
             if (type === 'callout') {
@@ -153,8 +181,7 @@
                 dynamicFields.innerHTML += `<label>Callout Body Paragraph(s):</label><textarea class="mapped-body">${bodyText || chunks[0] || ''}</textarea>`;
             } 
             else if (type === 'quote') {
-                // For quotes, we just join it all back together
-                dynamicFields.innerHTML += `<label>Exact Quote Text:</label><textarea class="mapped-body">${chunks.join('<br>')}</textarea>`;
+                dynamicFields.innerHTML += `<label>Exact Quote Text:</label><textarea class="mapped-body">${text}</textarea>`;
             }
             else if (type === 'list') {
                 chunks.forEach((chunk, index) => {
@@ -162,11 +189,10 @@
                 });
             }
             else if (type === 'accordion' || type === 'grid') {
-                // Pair them up (Title, Body, Title, Body)
                 for (let i = 0; i < chunks.length; i += 2) {
                     const num = Math.floor(i/2) + 1;
                     const safeTitle = chunks[i] ? chunks[i].replace(/"/g, '&quot;') : '';
-                    dynamicFields.innerHTML += `<div style="border-left: 3px solid #027299; padding-left: 1em; margin-bottom: 1em;">
+                    dynamicFields.innerHTML += `<div style="border-left: 3px solid #009fc2; padding-left: 1em; margin-bottom: 1em; background: #fbfcfd; padding-top: 0.5em; padding-bottom: 0.5em;">
                         <label>Item ${num} Header/Title:</label><input type="text" class="mapped-title" value="${safeTitle}">
                         <label>Item ${num} Body Content:</label><textarea class="mapped-body">${chunks[i+1] || ''}</textarea>
                     </div>`;
@@ -176,7 +202,7 @@
             clarificationArea.style.display = 'block';
         });
 
-        // Step 2: Generate final Canvas HTML from clarified fields
+        // ACTION 3: Generate HTML
         generateBtn.addEventListener('click', () => {
             const type = blockTypeEl.value;
             let html = '';
@@ -185,23 +211,15 @@
                 const title = document.querySelector('.mapped-title').value;
                 const bodyLines = document.querySelector('.mapped-body').value.split('\n\n').filter(p => p);
                 let bodyHtml = bodyLines.map(p => `<p style="margin: 0 0 1em 0; line-height: 1.6;">${p}</p>`).join('\n    ');
-                
-                html = `<div style="background-color: rgba(0, 159, 194, 0.08); border: 1px solid rgba(0, 159, 194, 0.2); border-radius: 8px; padding: 1.5em; margin: 1.5em 0;">
-    <h3 style="margin-top: 0; margin-bottom: 0.5em; color: #027299; font-size: 1.25em;">${title}</h3>
-    ${bodyHtml}
-</div>`;
+                html = `<div style="background-color: rgba(0, 159, 194, 0.08); border: 1px solid rgba(0, 159, 194, 0.2); border-radius: 8px; padding: 1.5em; margin: 1.5em 0;">\n    <h3 style="margin-top: 0; margin-bottom: 0.5em; color: #027299; font-size: 1.25em;">${title}</h3>\n    ${bodyHtml}\n</div>`;
             } 
             else if (type === 'quote') {
                 const body = document.querySelector('.mapped-body').value;
-                html = `<blockquote style="margin: 1.5em 0; padding: 1.2em 1.5em; border-left: 4px solid #009fc2; background-color: rgba(64, 78, 101, 0.03); border-radius: 0 8px 8px 0;">
-    <p style="margin: 0; font-style: italic; font-size: 1.1em; line-height: 1.6;">${body}</p>
-</blockquote>`;
+                html = `<blockquote style="margin: 1.5em 0; padding: 1.2em 1.5em; border-left: 4px solid #009fc2; background-color: rgba(64, 78, 101, 0.03); border-radius: 0 8px 8px 0;">\n    <p style="margin: 0; font-style: italic; font-size: 1.1em; line-height: 1.6;">${body}</p>\n</blockquote>`;
             }
             else if (type === 'list') {
                 const items = Array.from(document.querySelectorAll('.mapped-item')).map(inp => inp.value);
-                let listHtml = items.map(item => `    <li style="flex: 0 1 260px; border: 1px solid rgba(64, 78, 101, 0.15); border-radius: 8px; padding: 1.5em; background-color: rgba(64, 78, 101, 0.03);">
-        <p style="text-align: center; margin: 0; line-height: 1.5;">${item}</p>
-    </li>`).join('\n');
+                let listHtml = items.map(item => `    <li style="flex: 0 1 260px; border: 1px solid rgba(64, 78, 101, 0.15); border-radius: 8px; padding: 1.5em; background-color: rgba(64, 78, 101, 0.03);">\n        <p style="text-align: center; margin: 0; line-height: 1.5;">${item}</p>\n    </li>`).join('\n');
                 html = `<ul style="display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin: 1.5em 0; padding: 0; list-style: none;">\n${listHtml}\n</ul>`;
             }
             else if (type === 'accordion') {
@@ -209,10 +227,7 @@
                 const bodies = document.querySelectorAll('.mapped-body');
                 let accHtml = '';
                 for(let i=0; i < titles.length; i++){
-                    accHtml += `    <details style="border: 1px solid rgba(64, 78, 101, 0.15); border-left: 4px solid #027299; border-radius: 6px; background: #ffffff;">
-        <summary style="cursor: pointer; padding: 16px; font-size: 1.1em; color: #027299;"><strong>${titles[i].value}</strong></summary>
-        <div style="padding: 0 16px 16px 16px; line-height: 1.6;">${bodies[i].value}</div>
-    </details>\n`;
+                    accHtml += `    <details style="border: 1px solid rgba(64, 78, 101, 0.15); border-left: 4px solid #027299; border-radius: 6px; background: #ffffff;">\n        <summary style="cursor: pointer; padding: 16px; font-size: 1.1em; color: #027299;"><strong>${titles[i].value}</strong></summary>\n        <div style="padding: 0 16px 16px 16px; line-height: 1.6;">${bodies[i].value}</div>\n    </details>\n`;
                 }
                 html = `<div style="display: flex; flex-direction: column; gap: 12px; margin: 1.5em 0;">\n${accHtml}</div>`;
             }
@@ -221,14 +236,7 @@
                 const bodies = document.querySelectorAll('.mapped-body');
                 let gridHtml = '';
                 for(let i=0; i < titles.length; i++){
-                    gridHtml += `    <div style="display: flex; flex-direction: column; border: 1px solid rgba(64, 78, 101, 0.15); border-top: 5px solid #009fc2; border-radius: 8px; background: #ffffff; box-shadow: 0 4px 12px rgba(64, 78, 101, 0.08);">
-        <div style="padding: 1.5em 1.5em 1em 1.5em; border-bottom: 1px solid rgba(64, 78, 101, 0.15);">
-            <h3 style="margin: 0; color: #027299; font-size: 1.25em;">${titles[i].value}</h3>
-        </div>
-        <div style="padding: 1.5em; flex-grow: 1;">
-            <p style="margin-top: 0; margin-bottom: 0; line-height: 1.6;">${bodies[i].value}</p>
-        </div>
-    </div>\n`;
+                    gridHtml += `    <div style="display: flex; flex-direction: column; border: 1px solid rgba(64, 78, 101, 0.15); border-top: 5px solid #009fc2; border-radius: 8px; background: #ffffff; box-shadow: 0 4px 12px rgba(64, 78, 101, 0.08);">\n        <div style="padding: 1.5em 1.5em 1em 1.5em; border-bottom: 1px solid rgba(64, 78, 101, 0.15);">\n            <h3 style="margin: 0; color: #027299; font-size: 1.25em;">${titles[i].value}</h3>\n        </div>\n        <div style="padding: 1.5em; flex-grow: 1;">\n            <p style="margin-top: 0; margin-bottom: 0; line-height: 1.6;">${bodies[i].value}</p>\n        </div>\n    </div>\n`;
                 }
                 html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin: 1.5em 0; align-items: stretch;">\n${gridHtml}</div>`;
             }
@@ -238,7 +246,7 @@
             outputArea.style.display = 'block';
         });
 
-        // Copy to clipboard functionality
+        // Copy functionality
         copyBtn.addEventListener('click', () => {
             outputCode.select();
             document.execCommand('copy');

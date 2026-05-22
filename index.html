@@ -23,6 +23,12 @@
         .btn-add { background-color: #404e65; width: 100%; margin-bottom: 1em; border: 1px dashed rgba(255,255,255,0.5); }
         .error { background-color: #ffebee; color: #c62828; padding: 1em; border-left: 4px solid #c62828; border-radius: 4px; margin-bottom: 1em; display: none; }
         .item-group { border-left: 3px solid #009fc2; padding-left: 1em; margin-bottom: 1em; background: #fbfcfd; padding-top: 0.5em; padding-bottom: 0.5em; position: relative; }
+        
+        /* Toggle Switch Styling */
+        .input-toggle { display: flex; gap: 20px; margin-bottom: 1em; background: #eef2f5; padding: 12px; border-radius: 6px; border: 1px solid rgba(64,78,101,0.1); }
+        .input-toggle label { margin: 0; cursor: pointer; text-transform: none; color: #027299; font-size: 1em; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+        .input-toggle input[type="radio"] { width: auto; margin: 0; cursor: pointer; }
+        
         #outputArea { display: none; }
         #outputCode { background: #2d2d2d; color: #f8f8f2; min-height: 250px; }
     </style>
@@ -30,25 +36,32 @@
 <body>
 
     <h1>Canvas Content Block Generator</h1>
-    <p style="margin-bottom: 2em;">Convert rich text into perfectly formatted, accessible Canvas LMS components.</p>
+    <p style="margin-bottom: 2em;">Convert rich text or legacy HTML into perfectly formatted Canvas LMS components.</p>
 
     <div id="errorBox" class="error"></div>
 
     <div class="step-container">
-        <h3 class="step-header">Step 1: Paste & Clean</h3>
-        <p style="font-size: 0.9em;">Paste your content below. The cleaner will strip hidden Canvas junk while preserving your hyperlinks.</p>
-        <label>Raw Rich Text Input:</label>
-        <div id="rawInput" class="rich-input" contenteditable="true" data-placeholder="Paste your text with links here..."></div>
-        <button id="cleanBtn">Clean Formatting</button>
+        <h3 class="step-header">Step 1: Input & Clean</h3>
+        <p style="font-size: 0.9em;">Choose your input type below. The tool will automatically strip hidden junk code and format legacy elements, while permanently preserving your hyperlinks and bullet points.</p>
+        
+        <div class="input-toggle">
+            <label><input type="radio" name="inputType" value="visual" checked> Paste Visual (Rich Text)</label>
+            <label><input type="radio" name="inputType" value="html"> Paste Raw HTML Code (Legacy Content)</label>
+        </div>
+
+        <div id="visualInput" class="rich-input" contenteditable="true" data-placeholder="Paste text directly from Canvas, Word, or PDFs here..."></div>
+        <textarea id="htmlInput" placeholder="Paste legacy HTML source code here to upgrade it to the new component styling..." style="display: none;"></textarea>
+
+        <button id="cleanBtn">Clean & Extract</button>
     </div>
 
     <div class="step-container" id="step2" style="display: none;">
-        <h3 class="step-header">Step 2: Review Cleaned Text</h3>
-        <p style="font-size: 0.9em;">Review the cleaned text below. Hidden "Links to an external site" text has been removed.</p>
-        <label>Cleaned Text (Links Retained as HTML):</label>
+        <h3 class="step-header">Step 2: Review Cleaned Content</h3>
+        <p style="font-size: 0.9em;">Review the extracted text. Links and lists are preserved securely as HTML tags. Ensure distinct items (like headers vs. paragraphs) are separated by a blank line.</p>
+        
         <textarea id="cleanedInput"></textarea>
 
-        <label for="blockType">Select Content Block Type:</label>
+        <label for="blockType">Select Target Content Block:</label>
         <select id="blockType">
             <option value="callout">Callout Box (Introductions & Emphasized Text)</option>
             <option value="quote">Blockquote (Actual Quotes Only)</option>
@@ -61,10 +74,10 @@
 
     <div class="step-container" id="clarificationArea" style="display: none; border-color: #009fc2; border-width: 2px;">
         <h3 class="step-header" style="color: #027299;">Step 3: Clarify & Generate</h3>
-        <p style="font-size: 0.9em; margin-bottom: 1.5em;">If the tool guessed the layout wrong because of uneven paragraphs, you can fix it here. Add or remove items as needed before generating.</p>
+        <p style="font-size: 0.9em; margin-bottom: 1.5em;">Review the mapped layout. If an item ended up in the wrong box, simply copy/paste it into the correct field. Add or remove items as needed.</p>
         
         <div id="dynamicFields"></div>
-        <button id="generateBtn">Generate HTML</button>
+        <button id="generateBtn">Generate Final HTML</button>
     </div>
 
     <div class="step-container" id="outputArea">
@@ -74,21 +87,39 @@
     </div>
 
     <script>
-        const rawInputEl = document.getElementById('rawInput');
+        const inputRadios = document.querySelectorAll('input[name="inputType"]');
+        const visualInputEl = document.getElementById('visualInput');
+        const htmlInputEl = document.getElementById('htmlInput');
+        
         const cleanBtn = document.getElementById('cleanBtn');
         const step2 = document.getElementById('step2');
         const cleanedInputEl = document.getElementById('cleanedInput');
         const blockTypeEl = document.getElementById('blockType');
         const analyzeBtn = document.getElementById('analyzeBtn');
+        
         const clarificationArea = document.getElementById('clarificationArea');
         const dynamicFields = document.getElementById('dynamicFields');
         const generateBtn = document.getElementById('generateBtn');
+        
         const outputArea = document.getElementById('outputArea');
         const outputCode = document.getElementById('outputCode');
         const errorBox = document.getElementById('errorBox');
         const copyBtn = document.getElementById('copyBtn');
 
         let currentType = '';
+
+        // Toggle Visual vs HTML Input
+        inputRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if(e.target.value === 'visual') {
+                    visualInputEl.style.display = 'block';
+                    htmlInputEl.style.display = 'none';
+                } else {
+                    visualInputEl.style.display = 'none';
+                    htmlInputEl.style.display = 'block';
+                }
+            });
+        });
 
         function showError(msg) {
             errorBox.textContent = msg;
@@ -100,65 +131,91 @@
             errorBox.style.display = 'none';
         }
 
-        // Custom DOM Walker: Extracts text, explicitly strips Canvas 'external site' junk text
-        function extractCleanText(node) {
+        // Custom DOM Walker: Universal cleaner for both Rich Text & Legacy HTML
+        function extractCleanHTML(node) {
             let result = '';
             for (let child of node.childNodes) {
                 if (child.nodeType === Node.TEXT_NODE) {
                     let text = child.textContent.replace(/\u00A0/g, ' ').replace(/\s+/g, ' ');
-                    text = text.replace(/Links to an external site\.?/gi, ''); // Destroy Canvas ghost text
+                    text = text.replace(/Links to an external site\.?/gi, '');
                     result += text;
                 } else if (child.nodeType === Node.ELEMENT_NODE) {
                     const tag = child.tagName;
+
+                    // Destroy ghost canvas elements
+                    if (child.classList && child.classList.contains('invisible')) continue;
+                    if (child.textContent.includes('Links to an external site')) {
+                        child.innerHTML = child.innerHTML.replace(/Links to an external site\.?/gi, '');
+                    }
+
                     if (tag === 'A') {
                         let href = child.getAttribute('href') || '#';
-                        let linkText = child.textContent.trim().replace(/Links to an external site\.?/gi, ''); // Destroy Canvas ghost text in links
+                        let linkText = extractCleanHTML(child).trim();
                         if (linkText) {
                             result += `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color: #027299; text-decoration: underline; text-underline-offset: 3px;">${linkText}</a>`;
                         }
+                    } else if (tag === 'STRONG' || tag === 'B') {
+                        result += `<strong>${extractCleanHTML(child)}</strong>`;
+                    } else if (tag === 'EM' || tag === 'I') {
+                        result += `<em>${extractCleanHTML(child)}</em>`;
+                    } else if (tag === 'UL' || tag === 'OL') {
+                        let listContent = '';
+                        for (let li of child.children) {
+                            if(li.tagName === 'LI') {
+                                listContent += `<li>${extractCleanHTML(li).trim()}</li>`;
+                            }
+                        }
+                        if (listContent) {
+                            result += `\n\n<${tag.toLowerCase()}>${listContent}</${tag.toLowerCase()}>\n\n`;
+                        }
+                    } else if (tag === 'LI') {
+                        // Handled by parent
                     } else if (tag === 'BR') {
                         result += '\n';
-                    } else if (['P', 'DIV', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'SPAN'].includes(tag)) {
-                        // For Screenreader spans, skip if it matches canvas junk
-                        if (child.textContent.includes('Links to an external site')) {
-                           child.innerHTML = child.innerHTML.replace(/Links to an external site\.?/gi, '');
-                        }
-                        let innerText = extractCleanText(child).trim();
-                        if (innerText) result += innerText + '\n\n';
-                    } else {
-                        result += extractCleanText(child);
+                    } else if (['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE'].includes(tag)) {
+                        let innerText = extractCleanHTML(child).trim();
+                        if (innerText) result += `\n\n${innerText}\n\n`;
+                    } else if (!['SCRIPT', 'STYLE', 'IMG', 'IFRAME', 'OBJECT'].includes(tag)) {
+                        result += extractCleanHTML(child);
                     }
                 }
             }
             return result;
         }
 
-        // ACTION 1: Clean
+        // ACTION 1: Clean & Extract
         cleanBtn.addEventListener('click', () => {
             hideError();
-            if (!rawInputEl.textContent.trim()) return showError("Please paste some text first.");
+            const isVisual = document.querySelector('input[name="inputType"]:checked').value === 'visual';
+            const rawContent = isVisual ? visualInputEl.innerHTML : htmlInputEl.value;
+
+            if (!rawContent.trim()) return showError("Please provide some input text or HTML.");
             
+            // Build temporary DOM to parse
             let rawDOM = document.createElement('div');
-            rawDOM.innerHTML = rawInputEl.innerHTML;
-            let cleanStr = extractCleanText(rawDOM);
-            cleanStr = cleanStr.replace(/\n{3,}/g, '\n\n').trim(); // Fix spacing
+            rawDOM.innerHTML = rawContent;
+            
+            let cleanStr = extractCleanHTML(rawDOM);
+            
+            // Normalize excessive line breaks generated by nested legacy divs
+            cleanStr = cleanStr.replace(/\n{3,}/g, '\n\n').trim(); 
             
             cleanedInputEl.value = cleanStr;
             step2.style.display = 'block';
             clarificationArea.style.display = 'none';
             outputArea.style.display = 'none';
+            
+            step2.scrollIntoView({ behavior: 'smooth' });
         });
 
-        // Add Dynamic Item Builders
-        window.removeField = function(btn) {
-            btn.parentElement.remove();
-        }
+        // Dynamic Field Building Logic
+        window.removeField = function(btn) { btn.parentElement.remove(); }
 
         window.addListField = function(val = '') {
             const div = document.createElement('div');
             div.className = 'item-group';
             div.innerHTML = `<button class="btn-small" onclick="removeField(this)">Remove</button>
-                <label>List Item:</label><input type="text" class="mapped-item" value="${val.replace(/"/g, '&quot;')}">`;
+                <label>List Item (Flashcard text):</label><input type="text" class="mapped-item" value="${val.replace(/"/g, '&quot;')}">`;
             document.getElementById('fieldsContainer').appendChild(div);
         }
 
@@ -167,7 +224,7 @@
             div.className = 'item-group';
             div.innerHTML = `<button class="btn-small" onclick="removeField(this)">Remove</button>
                 <label>Header/Title:</label><input type="text" class="mapped-title" value="${title.replace(/"/g, '&quot;')}">
-                <label>Body Content:</label><textarea class="mapped-body" rows="3">${body}</textarea>`;
+                <label>Body Content (Accepts Lists & HTML):</label><textarea class="mapped-body" rows="3">${body}</textarea>`;
             document.getElementById('fieldsContainer').appendChild(div);
         }
 
@@ -194,11 +251,19 @@
                 container.innerHTML += `<div class="item-group"><label>Exact Quote Text:</label><textarea class="mapped-body" rows="4">${text}</textarea></div>`;
             }
             else if (currentType === 'list') {
-                chunks.forEach(chunk => window.addListField(chunk));
+                // Smart parser: If they mapped an HTML list to Flashcards, extract the LIs instantly
+                let temp = document.createElement('div');
+                temp.innerHTML = text;
+                let lis = temp.querySelectorAll('li');
+                
+                if (lis.length > 0) {
+                    lis.forEach(li => window.addListField(li.innerHTML.trim()));
+                } else {
+                    chunks.forEach(chunk => window.addListField(chunk));
+                }
                 dynamicFields.innerHTML += `<button class="btn-add" onclick="addListField()">+ Add Another List Item</button>`;
             }
             else if (currentType === 'accordion' || currentType === 'grid') {
-                // Attempt to auto-pair, but leave it editable
                 for (let i = 0; i < chunks.length; i += 2) {
                     window.addCardField(chunks[i] || '', chunks[i+1] || '');
                 }
@@ -206,16 +271,31 @@
             }
 
             clarificationArea.style.display = 'block';
+            clarificationArea.scrollIntoView({ behavior: 'smooth' });
         });
 
-        // ACTION 3: Generate HTML
+        // Smart Formatter: Safely applies structural tags to raw body text vs lists
+        function formatBodyHtml(rawBodyText) {
+            const lines = rawBodyText.split('\n\n').filter(p => p.trim());
+            return lines.map(p => {
+                p = p.trim();
+                if (p.startsWith('<ul') || p.startsWith('<ol')) {
+                    let styled = p.replace(/<(ul|ol)>/i, '<$1 style="margin: 0; padding-left: 24px; line-height: 1.6;">');
+                    styled = styled.replace(/<li>/gi, '<li style="margin-bottom: 12px;">');
+                    return styled;
+                } else {
+                    return `<p style="margin-top: 0; margin-bottom: 1em; line-height: 1.6;">${p}</p>`;
+                }
+            }).join('\n    ');
+        }
+
+        // ACTION 3: Generate Final Code
         generateBtn.addEventListener('click', () => {
             let html = '';
 
             if (currentType === 'callout') {
                 const title = document.querySelector('.mapped-title').value;
-                const bodyLines = document.querySelector('.mapped-body').value.split('\n\n').filter(p => p);
-                let bodyHtml = bodyLines.map(p => `<p style="margin: 0 0 1em 0; line-height: 1.6;">${p}</p>`).join('\n    ');
+                const bodyHtml = formatBodyHtml(document.querySelector('.mapped-body').value);
                 html = `<div style="background-color: rgba(0, 159, 194, 0.08); border: 1px solid rgba(0, 159, 194, 0.2); border-radius: 8px; padding: 1.5em; margin: 1.5em 0;">\n    <h3 style="margin-top: 0; margin-bottom: 0.5em; color: #027299; font-size: 1.25em;">${title}</h3>\n    ${bodyHtml}\n</div>`;
             } 
             else if (currentType === 'quote') {
@@ -232,7 +312,8 @@
                 const bodies = document.querySelectorAll('.mapped-body');
                 let accHtml = '';
                 for(let i=0; i < titles.length; i++){
-                    accHtml += `    <details style="border: 1px solid rgba(64, 78, 101, 0.15); border-left: 4px solid #027299; border-radius: 6px; background: #ffffff;">\n        <summary style="cursor: pointer; padding: 16px; font-size: 1.1em; color: #027299;"><strong>${titles[i].value}</strong></summary>\n        <div style="padding: 0 16px 16px 16px; line-height: 1.6;">${bodies[i].value}</div>\n    </details>\n`;
+                    const formattedBody = formatBodyHtml(bodies[i].value);
+                    accHtml += `    <details style="border: 1px solid rgba(64, 78, 101, 0.15); border-left: 4px solid #027299; border-radius: 6px; background: #ffffff;">\n        <summary style="cursor: pointer; padding: 16px; font-size: 1.1em; color: #027299;"><strong>${titles[i].value}</strong></summary>\n        <div style="padding: 0 16px 16px 16px; line-height: 1.6;">\n            ${formattedBody}\n        </div>\n    </details>\n`;
                 }
                 html = `<div style="display: flex; flex-direction: column; gap: 12px; margin: 1.5em 0;">\n${accHtml}</div>`;
             }
@@ -241,13 +322,15 @@
                 const bodies = document.querySelectorAll('.mapped-body');
                 let gridHtml = '';
                 for(let i=0; i < titles.length; i++){
-                    gridHtml += `    <div style="display: flex; flex-direction: column; border: 1px solid rgba(64, 78, 101, 0.15); border-top: 5px solid #009fc2; border-radius: 8px; background: #ffffff; box-shadow: 0 4px 12px rgba(64, 78, 101, 0.08);">\n        <div style="padding: 1.5em 1.5em 1em 1.5em; border-bottom: 1px solid rgba(64, 78, 101, 0.15);">\n            <h3 style="margin: 0; color: #027299; font-size: 1.25em;">${titles[i].value}</h3>\n        </div>\n        <div style="padding: 1.5em; flex-grow: 1;">\n            <p style="margin-top: 0; margin-bottom: 0; line-height: 1.6;">${bodies[i].value}</p>\n        </div>\n    </div>\n`;
+                    const formattedBody = formatBodyHtml(bodies[i].value);
+                    gridHtml += `    <div style="display: flex; flex-direction: column; border: 1px solid rgba(64, 78, 101, 0.15); border-top: 5px solid #009fc2; border-radius: 8px; background: #ffffff; box-shadow: 0 4px 12px rgba(64, 78, 101, 0.08);">\n        <div style="padding: 1.5em 1.5em 1em 1.5em; border-bottom: 1px solid rgba(64, 78, 101, 0.15);">\n            <h3 style="margin: 0; color: #027299; font-size: 1.25em;">${titles[i].value}</h3>\n        </div>\n        <div style="padding: 1.5em; flex-grow: 1;">\n            ${formattedBody}\n        </div>\n    </div>\n`;
                 }
                 html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin: 1.5em 0; align-items: stretch;">\n${gridHtml}</div>`;
             }
 
             outputCode.value = html;
             outputArea.style.display = 'block';
+            outputArea.scrollIntoView({ behavior: 'smooth' });
         });
 
         // Copy functionality

@@ -32,6 +32,8 @@
         button.action-btn:hover { background-color: #007d99; }
         button.generate-btn { background-color: #027299; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 1em; font-size: 1em; }
         button.generate-btn:hover { background-color: #005a7a; }
+        button.reset-btn { background-color: #e0e5eb; color: #404e65; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 1em; }
+        button.reset-btn:hover { background-color: #d1d7de; }
         
         /* Mapping Area */
         .mapping-area { border-left: 4px solid #009fc2; padding-left: 1.5em; margin: 1.5em 0; background: #f8fbfd; padding-top: 1em; padding-bottom: 1em; border-radius: 0 8px 8px 0; }
@@ -57,9 +59,11 @@
         <button class="tab-btn" onclick="openTool('tool-accordion', this)">Accordion</button>
         <button class="tab-btn" onclick="openTool('tool-grid', this)">CSS Grid Cards</button>
         <button class="tab-btn" onclick="openTool('tool-list', this)">Flexbox List Cards</button>
+        <!-- The New Scratch Builder Tab -->
         <button class="tab-btn special" onclick="openTool('tool-scratch', this)">+ Create From Scratch</button>
     </div>
 
+    <!-- TOOL 1: CALLOUT -->
     <div id="tool-callout" class="tool-panel active">
         <h2>Callout Box Converter</h2>
         <label>Paste Old HTML Code:</label>
@@ -76,8 +80,10 @@
             <button class="generate-btn" onclick="generateCallout()">Generate New Callout HTML</button>
         </div>
         <textarea id="callout-out" class="output-box" style="display:none;" readonly></textarea>
+        <button class="reset-btn" onclick="resetTool('callout')">Reset Tool</button>
     </div>
 
+    <!-- TOOL 2: BLOCKQUOTE -->
     <div id="tool-quote" class="tool-panel">
         <h2>Blockquote Converter</h2>
         <label>Paste Old HTML Code:</label>
@@ -92,8 +98,10 @@
             <button class="generate-btn" onclick="generateQuote()">Generate New Quote HTML</button>
         </div>
         <textarea id="quote-out" class="output-box" style="display:none;" readonly></textarea>
+        <button class="reset-btn" onclick="resetTool('quote')">Reset Tool</button>
     </div>
 
+    <!-- TOOL 3: ACCORDION -->
     <div id="tool-accordion" class="tool-panel">
         <h2>Collapsible Accordion Converter</h2>
         <label>Paste Old HTML Code:</label>
@@ -106,8 +114,10 @@
             <button class="generate-btn" onclick="generateAccordion()">Generate New Accordion HTML</button>
         </div>
         <textarea id="accordion-out" class="output-box" style="display:none;" readonly></textarea>
+        <button class="reset-btn" onclick="resetTool('accordion')">Reset Tool</button>
     </div>
 
+    <!-- TOOL 4: GRID CARDS -->
     <div id="tool-grid" class="tool-panel">
         <h2>CSS Grid Cards Converter</h2>
         <label>Paste Old HTML Code:</label>
@@ -120,8 +130,10 @@
             <button class="generate-btn" onclick="generateGrid()">Generate New Grid HTML</button>
         </div>
         <textarea id="grid-out" class="output-box" style="display:none;" readonly></textarea>
+        <button class="reset-btn" onclick="resetTool('grid')">Reset Tool</button>
     </div>
 
+    <!-- TOOL 5: LIST CARDS -->
     <div id="tool-list" class="tool-panel">
         <h2>Flexbox List Cards Converter</h2>
         <label>Paste Old HTML Code:</label>
@@ -134,8 +146,10 @@
             <button class="generate-btn" onclick="generateList()">Generate New List HTML</button>
         </div>
         <textarea id="list-out" class="output-box" style="display:none;" readonly></textarea>
+        <button class="reset-btn" onclick="resetTool('list')">Reset Tool</button>
     </div>
 
+    <!-- TOOL 6: CREATE FROM SCRATCH -->
     <div id="tool-scratch" class="tool-panel">
         <h2>Create Block From Scratch</h2>
         <p>Paste brand new raw text or rich text from Word/Canvas. The tool will clean it, preserve links/bullets, and let you build any component.</p>
@@ -168,6 +182,7 @@
             <button class="generate-btn" onclick="generateScratch()">Generate Final HTML</button>
         </div>
         <textarea id="scratch-out" class="output-box" style="display:none;" readonly></textarea>
+        <button class="reset-btn" onclick="resetTool('scratch')">Reset Tool</button>
     </div>
 
     <script>
@@ -177,6 +192,23 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(toolId).classList.add('active');
             btn.classList.add('active');
+        }
+
+        // Reset Tool Logic
+        function resetTool(tool) {
+            document.getElementById(`${tool}`).querySelectorAll('textarea, input').forEach(el => {
+                if (el.type !== 'button' && el.type !== 'submit') el.value = '';
+            });
+            if (document.getElementById(`${tool}-in`)) document.getElementById(`${tool}-in`).value = '';
+            if (document.getElementById(`${tool}-map`)) document.getElementById(`${tool}-map`).style.display = 'none';
+            if (document.getElementById(`${tool}-out`)) document.getElementById(`${tool}-out`).style.display = 'none';
+            
+            // Special reset for the scratch tool
+            if (tool === 'scratch') {
+                document.getElementById('scratch-in').innerHTML = '';
+                document.getElementById('scratch-step2').style.display = 'none';
+            }
+            alert('Tool has been reset.');
         }
 
         // Helper to strip HTML tags completely (used strictly for Headings/Titles)
